@@ -31,10 +31,7 @@ public class DateUtils {
      * @param date the date to format
      * @return string in format {@code yyyy-MM-dd}
      */
-    public static String toStorageString(LocalDate date) {
-        // TODO (Mohamed Arafa): return date.format(DATE_FORMAT);
-        throw new UnsupportedOperationException("toStorageString() not implemented yet — Mohamed Arafa");
-    }
+    public static String toStorageString(LocalDate date) { return date.format(DATE_FORMAT); }
 
     /**
      * Parses a SQLite ISO date string back to a {@link LocalDate}.
@@ -42,10 +39,7 @@ public class DateUtils {
      * @param dateStr string in format {@code yyyy-MM-dd}
      * @return parsed {@link LocalDate}
      */
-    public static LocalDate fromStorageString(String dateStr) {
-        // TODO (Mohamed Arafa): return LocalDate.parse(dateStr, DATE_FORMAT);
-        throw new UnsupportedOperationException("fromStorageString() not implemented yet — Mohamed Arafa");
-    }
+    public static LocalDate fromStorageString(String dateStr) { return LocalDate.parse(dateStr, DATE_FORMAT); }
 
     /**
      * Formats a {@link LocalDateTime} to a human-readable string for UI display.
@@ -53,10 +47,7 @@ public class DateUtils {
      * @param dateTime the timestamp to format
      * @return string in format {@code dd MMM yyyy HH:mm}, e.g. {@code "29 Apr 2026 14:35"}
      */
-    public static String toDisplayString(LocalDateTime dateTime) {
-        // TODO (Mohamed Arafa): return dateTime.format(DISPLAY_FORMAT);
-        throw new UnsupportedOperationException("toDisplayString() not implemented yet — Mohamed Arafa");
-    }
+    public static String toDisplayString(LocalDateTime dateTime) { return dateTime.format(DISPLAY_FORMAT); }
 
     /**
      * Formats a {@link LocalDateTime} to a SQLite storage string.
@@ -64,10 +55,7 @@ public class DateUtils {
      * @param dt the datetime to format
      * @return string in format {@code yyyy-MM-dd HH:mm:ss}
      */
-    public static String toStorageDateTimeString(LocalDateTime dt) {
-        // TODO (Mohamed Arafa): return dt.format(DATETIME_FORMAT);
-        throw new UnsupportedOperationException("toStorageDateTimeString() not implemented yet — Mohamed Arafa");
-    }
+    public static String toStorageDateTimeString(LocalDateTime dt) { return dt.format(DATETIME_FORMAT); }
 
     /**
      * Parses a SQLite datetime string back to {@link LocalDateTime}.
@@ -75,8 +63,5 @@ public class DateUtils {
      * @param s string in format {@code yyyy-MM-dd HH:mm:ss}
      * @return parsed {@link LocalDateTime}
      */
-    public static LocalDateTime fromStorageDateTimeString(String s) {
-        // TODO (Mohamed Arafa): return LocalDateTime.parse(s, DATETIME_FORMAT);
-        throw new UnsupportedOperationException("fromStorageDateTimeString() not implemented yet — Mohamed Arafa");
-    }
+    public static LocalDateTime fromStorageDateTimeString(String s) { return LocalDateTime.parse(s, DATETIME_FORMAT); }
 }
