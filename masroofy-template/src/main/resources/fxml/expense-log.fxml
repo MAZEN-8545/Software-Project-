@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<StackPane xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="com.masroofy.controller.ExpenseController"
+           prefWidth="700" prefHeight="580"
+           style="-fx-background-color:#0F1923;">
+
+    <VBox alignment="CENTER" spacing="0"
+          style="-fx-background-color:#0F1923;-fx-padding:30 40;">
+
+        <!-- Back nav -->
+        <HBox alignment="CENTER_LEFT" style="-fx-padding:0 0 20 0;">
+            <Button text="← Dashboard" onAction="#onBackClick"
+                    style="-fx-background-color:transparent;-fx-text-fill:#7BAFC4;-fx-cursor:hand;-fx-font-size:13px;-fx-padding:6 14;-fx-background-radius:20px;"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label text="Masroofy"
+                   style="-fx-font-size:15px;-fx-font-weight:bold;-fx-text-fill:#4E7A8E;"/>
+        </HBox>
+
+        <!-- Card -->
+        <VBox style="-fx-background-color:#142230;-fx-border-color:#1E3A4A;-fx-border-width:1px;-fx-border-radius:16px;-fx-background-radius:16px;-fx-padding:40 44;-fx-max-width:460;"
+              alignment="TOP_LEFT" spacing="6">
+
+            <Label text="Log an Expense"
+                   style="-fx-font-size:22px;-fx-font-weight:bold;-fx-text-fill:#E8F4F8;"/>
+            <Label text="RECORD YOUR SPENDING"
+                   style="-fx-font-size:11px;-fx-text-fill:#4E7A8E;-fx-padding:0 0 16 0;"/>
+
+            <Label text="AMOUNT (EGP)"
+                   style="-fx-font-size:11px;-fx-font-weight:bold;-fx-text-fill:#4E7A8E;"/>
+            <TextField fx:id="txtAmount" promptText="e.g. 50.00" maxWidth="Infinity"
+                       style="-fx-background-color:#0D1C28;-fx-border-color:#1E3A4A;-fx-border-width:1.5px;-fx-border-radius:8px;-fx-background-radius:8px;-fx-text-fill:#D4EAF5;-fx-prompt-text-fill:#2D5A72;-fx-padding:10 14;-fx-font-size:14px;"/>
+
+            <Label text="CATEGORY"
+                   style="-fx-font-size:11px;-fx-font-weight:bold;-fx-text-fill:#4E7A8E;-fx-padding:10 0 0 0;"/>
+            <ChoiceBox fx:id="cbCategory" maxWidth="Infinity" prefHeight="40"/>
+
+            <Label text="NOTE (OPTIONAL)"
+                   style="-fx-font-size:11px;-fx-font-weight:bold;-fx-text-fill:#4E7A8E;-fx-padding:10 0 0 0;"/>
+            <TextField fx:id="txtNote" promptText="e.g. Lunch at uni" maxWidth="Infinity"
+                       style="-fx-background-color:#0D1C28;-fx-border-color:#1E3A4A;-fx-border-width:1.5px;-fx-border-radius:8px;-fx-background-radius:8px;-fx-text-fill:#D4EAF5;-fx-prompt-text-fill:#2D5A72;-fx-padding:10 14;-fx-font-size:14px;"/>
+
+            <HBox spacing="6" alignment="CENTER_LEFT" style="-fx-padding:10 0 0 0;">
+                <Label text="Today's safe limit:"
+                       style="-fx-text-fill:#4E7A8E;-fx-font-size:12px;"/>
+                <Label fx:id="lblDailyLimitHint" text="—"
+                       style="-fx-text-fill:#2ECC71;-fx-font-size:13px;-fx-font-weight:bold;"/>
+            </HBox>
+
+            <Label fx:id="lblError" text=""
+                   style="-fx-text-fill:#E74C3C;-fx-font-size:12px;"
+                   visible="false" wrapText="true"/>
+
+            <HBox spacing="12" style="-fx-padding:16 0 0 0;">
+                <Button text="Save Expense" onAction="#onSaveExpenseClick"
+                        HBox.hgrow="ALWAYS" prefHeight="44"
+                        style="-fx-background-color:#2A86B5;-fx-text-fill:white;-fx-font-size:14px;-fx-font-weight:bold;-fx-background-radius:8px;-fx-cursor:hand;"/>
+                <Button text="Cancel" onAction="#onBackClick"
+                        prefHeight="44" prefWidth="110"
+                        style="-fx-background-color:#1E3A4A;-fx-text-fill:#7BAFC4;-fx-font-size:14px;-fx-background-radius:8px;-fx-border-color:#2D5A72;-fx-border-radius:8px;-fx-cursor:hand;"/>
+            </HBox>
+
+        </VBox>
+    </VBox>
+</StackPane>

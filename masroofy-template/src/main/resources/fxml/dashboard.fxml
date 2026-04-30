@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.masroofy.controller.DashboardController"
+            prefWidth="1050" prefHeight="720"
+            style="-fx-background-color:#0F1923;">
+
+    <top>
+        <HBox alignment="CENTER_LEFT" spacing="16"
+              style="-fx-background-color:#0A1118;-fx-border-color:transparent transparent #1E3A4A transparent;-fx-border-width:0 0 1 0;-fx-padding:14 24;">
+            <Label text="Masroofy"
+                   style="-fx-font-size:20px;-fx-font-weight:bold;-fx-text-fill:#E8F4F8;"/>
+            <Label text="●" style="-fx-text-fill:#3498DB;-fx-font-size:20px;"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="History" onAction="#onViewHistoryClick"
+                    style="-fx-background-color:transparent;-fx-text-fill:#7BAFC4;-fx-cursor:hand;-fx-font-size:13px;-fx-padding:6 14;-fx-background-radius:20px;"/>
+            <Button text="+ New Cycle" onAction="#onNewCycleClick"
+                    style="-fx-background-color:transparent;-fx-text-fill:#7BAFC4;-fx-cursor:hand;-fx-font-size:13px;-fx-padding:6 14;-fx-background-radius:20px;"/>
+        </HBox>
+    </top>
+
+    <center>
+        <ScrollPane fitToWidth="true"
+                    style="-fx-background-color:#0F1923;-fx-background:transparent;-fx-border-color:transparent;">
+            <VBox spacing="24" alignment="TOP_CENTER"
+                  style="-fx-background-color:#0F1923;-fx-padding:28 36;">
+
+                <!-- Header -->
+                <VBox spacing="4" alignment="CENTER">
+                    <Label text="Budget Overview"
+                           style="-fx-font-size:26px;-fx-font-weight:bold;-fx-text-fill:#E8F4F8;"/>
+                    <Label fx:id="lblCycleDates" text="Loading..."
+                           style="-fx-font-size:12px;-fx-text-fill:#4E7A8E;"/>
+                </VBox>
+
+                <!-- KPI Cards -->
+                <HBox spacing="16" alignment="CENTER">
+
+                    <VBox alignment="CENTER" spacing="8"
+                          style="-fx-background-color:#142230;-fx-border-color:#1E3A4A;-fx-border-width:1px;-fx-border-radius:12px;-fx-background-radius:12px;-fx-padding:20 28;-fx-pref-width:210;">
+                        <Label text="REMAINING BALANCE"
+                               style="-fx-text-fill:#4E7A8E;-fx-font-size:11px;"/>
+                        <Label fx:id="lblRemainingBalance" text="EGP —"
+                               style="-fx-text-fill:#E8F4F8;-fx-font-size:24px;-fx-font-weight:bold;"/>
+                    </VBox>
+
+                    <VBox alignment="CENTER" spacing="8"
+                          style="-fx-background-color:#142230;-fx-border-color:#1E3A4A;-fx-border-width:1px;-fx-border-radius:12px;-fx-background-radius:12px;-fx-padding:20 28;-fx-pref-width:210;">
+                        <Label text="SAFE DAILY LIMIT"
+                               style="-fx-text-fill:#4E7A8E;-fx-font-size:11px;"/>
+                        <Label fx:id="lblDailyLimit" text="EGP —"
+                               style="-fx-text-fill:#2ECC71;-fx-font-size:24px;-fx-font-weight:bold;"/>
+                    </VBox>
+
+                    <VBox alignment="CENTER" spacing="8"
+                          style="-fx-background-color:#142230;-fx-border-color:#1E3A4A;-fx-border-width:1px;-fx-border-radius:12px;-fx-background-radius:12px;-fx-padding:20 28;-fx-pref-width:210;">
+                        <Label text="TOTAL SPENT"
+                               style="-fx-text-fill:#4E7A8E;-fx-font-size:11px;"/>
+                        <Label fx:id="lblTotalSpent" text="EGP —"
+                               style="-fx-text-fill:#E8F4F8;-fx-font-size:24px;-fx-font-weight:bold;"/>
+                    </VBox>
+
+                    <VBox alignment="CENTER" spacing="8"
+                          style="-fx-background-color:#142230;-fx-border-color:#1E3A4A;-fx-border-width:1px;-fx-border-radius:12px;-fx-background-radius:12px;-fx-padding:20 28;-fx-pref-width:210;">
+                        <Label text="DAYS REMAINING"
+                               style="-fx-text-fill:#4E7A8E;-fx-font-size:11px;"/>
+                        <Label fx:id="lblRemainingDays" text="—"
+                               style="-fx-text-fill:#E8F4F8;-fx-font-size:24px;-fx-font-weight:bold;"/>
+                    </VBox>
+
+                </HBox>
+
+                <!-- Progress -->
+                <VBox spacing="6" maxWidth="640" alignment="CENTER_LEFT">
+                    <HBox>
+                        <Label text="Budget Consumption"
+                               style="-fx-font-size:11px;-fx-font-weight:bold;-fx-text-fill:#4E7A8E;"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="lblSpentPercentage" text="0% spent"
+                               style="-fx-text-fill:#4E7A8E;-fx-font-size:12px;"/>
+                    </HBox>
+                    <ProgressBar fx:id="progressSpent" progress="0"
+                                 maxWidth="640" prefHeight="12"/>
+                    <Label fx:id="lblStatusBadge" text=""
+                           style="-fx-text-fill:#2ECC71;-fx-font-size:12px;"/>
+                </VBox>
+
+                <!-- Divider -->
+                <Region maxWidth="640" prefHeight="1"
+                        style="-fx-background-color:#1E3A4A;"/>
+
+                <!-- Action Buttons -->
+                <HBox spacing="16" alignment="CENTER">
+                    <Button text="+ Log Expense" onAction="#onLogExpenseClick"
+                            prefWidth="190" prefHeight="44"
+                            style="-fx-background-color:#2A86B5;-fx-text-fill:white;-fx-font-size:14px;-fx-font-weight:bold;-fx-background-radius:8px;-fx-cursor:hand;"/>
+                    <Button text="View History" onAction="#onViewHistoryClick"
+                            prefWidth="190" prefHeight="44"
+                            style="-fx-background-color:#1E3A4A;-fx-text-fill:#7BAFC4;-fx-font-size:14px;-fx-background-radius:8px;-fx-border-color:#2D5A72;-fx-border-radius:8px;-fx-cursor:hand;"/>
+                </HBox>
+
+                <!-- Recent Transactions -->
+                <VBox spacing="8" maxWidth="680" alignment="TOP_LEFT">
+                    <Label text="RECENT TRANSACTIONS"
+                           style="-fx-font-size:11px;-fx-font-weight:bold;-fx-text-fill:#4E7A8E;"/>
+                    <ListView fx:id="listRecentTx" prefHeight="160" maxWidth="680"
+                              style="-fx-background-color:transparent;-fx-border-color:transparent;"/>
+                    <Label fx:id="lblNoTx"
+                           text="No transactions yet — log your first expense above."
+                           style="-fx-text-fill:#2D5A72;-fx-font-size:14px;-fx-padding:20;"
+                           visible="false" maxWidth="680"/>
+                </VBox>
+
+            </VBox>
+        </ScrollPane>
+    </center>
+
+</BorderPane>

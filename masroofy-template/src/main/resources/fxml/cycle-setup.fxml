@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<StackPane xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="com.masroofy.controller.CycleSetupController"
+           prefWidth="700" prefHeight="620"
+           style="-fx-background-color:#0F1923;">
+
+    <VBox alignment="CENTER" spacing="0"
+          style="-fx-background-color:#0F1923; -fx-padding:30 40;">
+
+        <HBox alignment="CENTER" spacing="8" style="-fx-padding:0 0 28 0;">
+            <Label text="Masroofy"
+                   style="-fx-font-size:26px;-fx-font-weight:bold;-fx-text-fill:#E8F4F8;"/>
+            <Label text="●" style="-fx-text-fill:#3498DB;-fx-font-size:26px;"/>
+        </HBox>
+
+        <VBox style="-fx-background-color:#142230;-fx-border-color:#1E3A4A;-fx-border-width:1px;-fx-border-radius:16px;-fx-background-radius:16px;-fx-padding:40 44;-fx-max-width:460;"
+              alignment="TOP_LEFT" spacing="6">
+
+            <Label text="Set Up Your Budget Cycle"
+                   style="-fx-font-size:22px;-fx-font-weight:bold;-fx-text-fill:#E8F4F8;"/>
+            <Label text="START TRACKING YOUR SPENDING"
+                   style="-fx-font-size:11px;-fx-text-fill:#4E7A8E;-fx-padding:0 0 16 0;"/>
+
+            <Label text="TOTAL ALLOWANCE (EGP)"
+                   style="-fx-font-size:11px;-fx-font-weight:bold;-fx-text-fill:#4E7A8E;"/>
+            <TextField fx:id="txtTotalAllowance" promptText="e.g. 3000.00"
+                       maxWidth="Infinity"
+                       style="-fx-background-color:#0D1C28;-fx-border-color:#1E3A4A;-fx-border-width:1.5px;-fx-border-radius:8px;-fx-background-radius:8px;-fx-text-fill:#D4EAF5;-fx-prompt-text-fill:#2D5A72;-fx-padding:10 14;-fx-font-size:14px;"/>
+
+            <Label text="START DATE"
+                   style="-fx-font-size:11px;-fx-font-weight:bold;-fx-text-fill:#4E7A8E;-fx-padding:10 0 0 0;"/>
+            <DatePicker fx:id="dpStartDate" maxWidth="Infinity"/>
+
+            <Label text="END DATE"
+                   style="-fx-font-size:11px;-fx-font-weight:bold;-fx-text-fill:#4E7A8E;-fx-padding:10 0 0 0;"/>
+            <DatePicker fx:id="dpEndDate" maxWidth="Infinity"/>
+
+            <Label fx:id="lblError" text=""
+                   style="-fx-text-fill:#E74C3C;-fx-font-size:12px;"
+                   visible="false" wrapText="true"/>
+
+            <Button text="Save Cycle  →" onAction="#onSaveCycleClick"
+                    maxWidth="Infinity"
+                    style="-fx-background-color:#2A86B5;-fx-text-fill:white;-fx-font-size:15px;-fx-font-weight:bold;-fx-padding:13 28;-fx-background-radius:8px;-fx-cursor:hand;-fx-border-radius:8px;"/>
+
+        </VBox>
+    </VBox>
+</StackPane>
