@@ -24,11 +24,9 @@ public class AlertUtils {
      * @param message the message to display
      */
     public static void showInfo(String title, String message) {
-        // TODO (Mohamed Arafa):
-        // Alert alert = new Alert(AlertType.INFORMATION);
-        // alert.setTitle(title); alert.setHeaderText(null); alert.setContentText(message);
-        // alert.showAndWait();
-        throw new UnsupportedOperationException("showInfo() not implemented yet — Mohamed Arafa");
+         Alert alert = new Alert(AlertType.INFORMATION);
+         alert.setTitle(title); alert.setHeaderText(null); alert.setContentText(message);
+         alert.showAndWait();
     }
 
     /**
@@ -37,11 +35,9 @@ public class AlertUtils {
      * @param message the warning text to display
      */
     public static void showWarning(String message) {
-        // TODO (Mohamed Arafa):
-        // Alert alert = new Alert(AlertType.WARNING);
-        // alert.setTitle("Budget Warning"); alert.setHeaderText("Budget Alert");
-        // alert.setContentText(message); alert.showAndWait();
-        throw new UnsupportedOperationException("showWarning() not implemented yet — Mohamed Arafa");
+         Alert alert = new Alert(AlertType.WARNING);
+         alert.setTitle("Budget Warning"); alert.setHeaderText("Budget Alert");
+         alert.setContentText(message); alert.showAndWait();
     }
 
     /**
@@ -50,11 +46,9 @@ public class AlertUtils {
      * @param message the error description to display
      */
     public static void showError(String message) {
-        // TODO (Mohamed Arafa):
-        // Alert alert = new Alert(AlertType.ERROR);
-        // alert.setTitle("Error"); alert.setHeaderText(null); alert.setContentText(message);
-        // alert.showAndWait();
-        throw new UnsupportedOperationException("showError() not implemented yet — Mohamed Arafa");
+         Alert alert = new Alert(AlertType.ERROR);
+         alert.setTitle("Error"); alert.setHeaderText(null); alert.setContentText(message);
+         alert.showAndWait();
     }
 
     /**
@@ -65,10 +59,8 @@ public class AlertUtils {
      * @return {@code true} if the user clicked OK; {@code false} if cancelled
      */
     public static boolean showConfirm(String title, String message) {
-        // TODO (Mohamed Arafa):
-        // Alert alert = new Alert(AlertType.CONFIRMATION);
-        // alert.setTitle(title); alert.setHeaderText(null); alert.setContentText(message);
-        // return alert.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK;
-        throw new UnsupportedOperationException("showConfirm() not implemented yet — Mohamed Arafa");
+         Alert alert = new Alert(AlertType.CONFIRMATION);
+         alert.setTitle(title); alert.setHeaderText(null); alert.setContentText(message);
+         return alert.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK;
     }
 }
