@@ -45,16 +45,18 @@ public class StateManager {
      * @param cycle the BudgetCycle this manager tracks
      */
     public StateManager(BudgetCycle cycle) {
-        // TODO (Mohamed Arafa): this.cycle = cycle; this.currentState = CycleState.INITIALIZING;
-        throw new UnsupportedOperationException("Constructor not implemented yet — Mohamed Arafa");
+        if (cycle == null) {
+            throw new IllegalArgumentException("BudgetCycle must not be null.");
+        }
+        this.cycle = cycle;
+        this.currentState = CycleState.INITIALIZING;
     }
 
     /**
      * Transitions {@code INITIALIZING → ACTIVE} after {@code saveCycle()} succeeds (US#1).
      */
     public void onCycleSaved() {
-        // TODO (Mohamed Arafa): currentState = CycleState.ACTIVE;
-        throw new UnsupportedOperationException("onCycleSaved() not implemented yet — Mohamed Arafa");
+        currentState = CycleState.ACTIVE;
     }
 
     /**
@@ -62,54 +64,46 @@ public class StateManager {
      * transaction is saved and limits are recalculated (US#2).
      */
     public void onExpenseLogged() {
-        // TODO (Mohamed Arafa):
-        // 1. currentState = CycleState.EXPENSE_LOGGED;
-        // 2. cycle.recalculateLimit();
-        // 3. currentState = CycleState.ACTIVE;
-        throw new UnsupportedOperationException("onExpenseLogged() not implemented yet — Mohamed Arafa");
+        currentState = CycleState.EXPENSE_LOGGED;
+        cycle.recalculateLimit();
+        currentState = CycleState.ACTIVE;
     }
 
     /**
      * Transitions {@code ACTIVE → DAILY_ROLLOVER → ACTIVE} when a new day starts (US#5).
      */
     public void onNewDay() {
-        // TODO (Mohamed Arafa):
-        // 1. currentState = CycleState.DAILY_ROLLOVER;
-        // 2. cycle.applyDailyRollover(java.time.LocalDate.now());
-        // 3. currentState = CycleState.ACTIVE;
-        throw new UnsupportedOperationException("onNewDay() not implemented yet — Mohamed Arafa");
+        currentState = CycleState.DAILY_ROLLOVER;
+        cycle.applyDailyRollover(java.time.LocalDate.now());
+        currentState = CycleState.ACTIVE;
     }
 
     /**
      * Transitions to {@code ALERT_TRIGGERED} when spent &gt;= 80% (US#6).
      */
     public void onEightyPercentReached() {
-        // TODO (Mohamed Arafa): currentState = CycleState.ALERT_TRIGGERED;
-        throw new UnsupportedOperationException("onEightyPercentReached() not implemented yet — Mohamed Arafa");
+        currentState = CycleState.ALERT_TRIGGERED;
     }
 
     /**
      * Transitions to {@code BUDGET_EXHAUSTED} when spent &gt;= 100% (US#6).
      */
     public void onBudgetExhausted() {
-        // TODO (Mohamed Arafa): currentState = CycleState.BUDGET_EXHAUSTED;
-        throw new UnsupportedOperationException("onBudgetExhausted() not implemented yet — Mohamed Arafa");
+        currentState = CycleState.BUDGET_EXHAUSTED;
     }
 
     /**
      * Transitions {@code ACTIVE → CYCLE_ENDED} when endDate is reached.
      */
     public void onEndDateReached() {
-        // TODO (Mohamed Arafa): currentState = CycleState.CYCLE_ENDED;
-        throw new UnsupportedOperationException("onEndDateReached() not implemented yet — Mohamed Arafa");
+        currentState = CycleState.CYCLE_ENDED;
     }
 
     /**
      * Transitions to {@code RESET_CLEARED} when user resets the cycle.
      */
     public void onUserReset() {
-        // TODO (Mohamed Arafa): currentState = CycleState.RESET_CLEARED;
-        throw new UnsupportedOperationException("onUserReset() not implemented yet — Mohamed Arafa");
+        currentState = CycleState.RESET_CLEARED;
     }
 
     /**
