@@ -1,122 +1,227 @@
 package com.masroofy.controller;
 
 import java.net.URL;
+import java.util.List;
 import java.util.ResourceBundle;
 
+import com.masroofy.Main;
+import com.masroofy.model.BudgetCycle;
+import com.masroofy.model.Transaction;
+import com.masroofy.service.BudgetCalculator;
 import com.masroofy.service.DashboardService;
+import com.masroofy.service.DashboardService.DashboardSummary;
+import com.masroofy.util.AlertUtils;
+import com.masroofy.util.DateUtils;
 
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ProgressBar;
+import javafx.stage.Stage;
 
 /**
- * Controller for {@code dashboard.fxml} — handles US#3 (Dynamic Daily Limit View)
- * and US#4 (Visual Spending Insights).
+ * Controller for dashboard.fxml — handles US#3 and US#4.
+ * Only uses DashboardService (Facade pattern).
  *
- * <p>Only interacts with {@link DashboardService} (Facade pattern) — never calls the
- * repository or calculator directly.</p>
- *
- * <p><b>OWNER: Mahmoud Mohamed Elsawy (20240558)</b></p>
- *
- * @version 1.0
+ * @author Mahmoud Mohamed Elsawy
+ * @version 2.0
  */
 public class DashboardController implements Initializable {
 
-    // ── FXML fields ───────────────────────────────────────────────
-    @FXML private Label       lblDailyLimit;
-    @FXML private Label       lblRemainingBalance;
-    @FXML private Label       lblRemainingDays;
-    @FXML private Label       lblTotalSpent;
-    @FXML private Label       lblCycleDates;
-    @FXML private ProgressBar progressSpent;
-    @FXML private Label       lblSpentPercentage;
-    @FXML private Label       lblStatusBadge;
-    @FXML private ListView<String> listRecentTx;
-    @FXML private Label       lblNoTx;
+    @FXML
+    private Label lblDailyLimit;
+    @FXML
+    private Label lblRemainingBalance;
+    @FXML
+    private Label lblRemainingDays;
+    @FXML
+    private Label lblTotalSpent;
+    @FXML
+    private Label lblCycleDates;
+    @FXML
+    private ProgressBar progressSpent;
+    @FXML
+    private Label lblSpentPercentage;
+    @FXML
+    private Label lblStatusBadge;
+    @FXML
+    private ListView<String> listRecentTx;
+    @FXML
+    private Label lblNoTx;
 
     private DashboardService dashboardService;
 
-    /**
-     * Called automatically by JavaFX. Creates the service and loads the dashboard.
-     */
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        // TODO (Mahmoud Elsawy):
-        // 1. dashboardService = new DashboardService(Main.getRepository(), new BudgetCalculator());
-        // 2. Call loadDashboard();
-        throw new UnsupportedOperationException("initialize() not implemented yet — Mahmoud Elsawy");
+        dashboardService = new DashboardService(
+                Main.getRepository(), new BudgetCalculator());
+        loadDashboard();
     }
 
     /**
      * Loads all KPIs and updates the UI (US#3 sequence diagram).
-     *
-     * <p>Steps:
-     * <ol>
-     *   <li>Get active cycle from repository. If null → call {@link #navigateToSetup()}.</li>
-     *   <li>Set lblCycleDates from cycle.getStartDate() and cycle.getEndDate().</li>
-     *   <li>Call {@code dashboardService.getDashboardSummary(cycleId)} to get the summary.</li>
-     *   <li>Set all KPI label texts (EGP format with %.2f, days label with " days").</li>
-     *   <li>Set lblDailyLimit text color: green (&lt;80%), amber (80–99%), red (&gt;=100%).</li>
-     *   <li>Set progressSpent progress = min(spentPercentage / 100.0, 1.0).</li>
-     *   <li>Set progress bar accent color matching the daily limit color above.</li>
-     *   <li>Set lblStatusBadge text and color based on cycle state (ended/final day/80%/active).</li>
-     *   <li>Call {@link #loadRecentTransactions(int)} with cycleId.</li>
-     *   <li>If isCycleEnded: show confirm dialog → navigate to setup if confirmed.</li>
-     * </ol>
-     * </p>
      */
     private void loadDashboard() {
-        // TODO (Mahmoud Elsawy): Implement the 10 steps above.
-        throw new UnsupportedOperationException("loadDashboard() not implemented yet — Mahmoud Elsawy");
+        BudgetCycle cycle = Main.getRepository().getActiveCycle(1);
+        if (cycle == null) {
+            navigateToSetup();
+            return;
+        }
+
+        // Cycle date range label
+        lblCycleDates.setText(cycle.getStartDate() + "  →  " + cycle.getEndDate());
+
+        DashboardSummary summary = dashboardService.getDashboardSummary(cycle.getCycleId());
+
+        // KPI labels
+        lblRemainingBalance.setText(String.format("EGP %.2f", summary.remainingBalance));
+        lblTotalSpent.setText(String.format("EGP %.2f", summary.totalSpent));
+        lblRemainingDays.setText(summary.remainingDays + " days");
+
+        // Safe daily limit — colour by status
+        String sdlText = String.format("EGP %.2f", summary.safeDailyLimit);
+        lblDailyLimit.setText(sdlText);
+        if (summary.spentPercentage >= 100) {
+            lblDailyLimit.setStyle("-fx-text-fill:#E74C3C;-fx-font-size:26px;-fx-font-weight:bold;");
+        } else if (summary.spentPercentage >= 80) {
+            lblDailyLimit.setStyle("-fx-text-fill:#F39C12;-fx-font-size:26px;-fx-font-weight:bold;");
+        } else {
+            lblDailyLimit.setStyle("-fx-text-fill:#2ECC71;-fx-font-size:26px;-fx-font-weight:bold;");
+        }
+
+        // Progress bar
+        double progress = Math.min(summary.spentPercentage / 100.0, 1.0);
+        progressSpent.setProgress(progress);
+        lblSpentPercentage.setText(String.format("%.1f%% spent", summary.spentPercentage));
+
+        // Bar colour via inline style on the accent
+        if (summary.spentPercentage >= 100) {
+            progressSpent.setStyle("-fx-accent: #E74C3C;");
+        } else if (summary.spentPercentage >= 80) {
+            progressSpent.setStyle("-fx-accent: #F39C12;");
+        } else {
+            progressSpent.setStyle("-fx-accent: #2ECC71;");
+        }
+
+        // Status badge
+        if (summary.isCycleEnded) {
+            lblStatusBadge.setText("● Cycle ended");
+            lblStatusBadge.setStyle("-fx-text-fill:#E74C3C;-fx-font-size:12px;");
+        } else if (summary.isFinalDay) {
+            lblStatusBadge.setText("⚠  Final Day — spend wisely!");
+            lblStatusBadge.setStyle("-fx-text-fill:#F39C12;-fx-font-size:12px;");
+        } else if (summary.spentPercentage >= 80) {
+            lblStatusBadge.setText("⚠  80% of budget consumed");
+            lblStatusBadge.setStyle("-fx-text-fill:#F39C12;-fx-font-size:12px;");
+        } else {
+            lblStatusBadge.setText("● Active cycle");
+            lblStatusBadge.setStyle("-fx-text-fill:#2ECC71;-fx-font-size:12px;");
+        }
+
+        // Recent transactions (last 5)
+        loadRecentTransactions(cycle.getCycleId());
+
+        // Cycle ended prompt
+        if (summary.isCycleEnded) {
+            boolean start = AlertUtils.showConfirm("Cycle Ended",
+                    "Your budget cycle has ended. Start a new cycle?");
+            if (start)
+                navigateToSetup();
+        }
     }
 
     /**
-     * Loads and displays the 5 most recent transactions in the preview list (US#3).
-     * Shows lblNoTx placeholder if the list is empty.
-     *
-     * @param cycleId the active cycle ID
+     * Loads up to 5 most recent transactions for the preview list.
      */
     private void loadRecentTransactions(int cycleId) {
-        // TODO (Mahmoud Elsawy):
-        // 1. List<Transaction> txs = Main.getRepository().getTransactions(cycleId);
-        // 2. If empty: listRecentTx.setVisible(false); lblNoTx.setVisible(true); return;
-        // 3. listRecentTx.setVisible(true); lblNoTx.setVisible(false);
-        // 4. Build ObservableList<String> — show up to 5 transactions formatted as:
-        //    "  %-14s  EGP %8.2f   %s%s" (category, amount, DateUtils.toDisplayString, note)
-        // 5. listRecentTx.setItems(items);
-        throw new UnsupportedOperationException("loadRecentTransactions() not implemented yet — Mahmoud Elsawy");
+        List<Transaction> txs = Main.getRepository().getTransactions(cycleId);
+        if (txs.isEmpty()) {
+            listRecentTx.setVisible(false);
+            lblNoTx.setVisible(true);
+            return;
+        }
+        listRecentTx.setVisible(true);
+        lblNoTx.setVisible(false);
+
+        ObservableList<String> items = FXCollections.observableArrayList();
+        int limit = Math.min(txs.size(), 5);
+        for (int i = 0; i < limit; i++) {
+            Transaction tx = txs.get(i);
+            String note = (tx.getNote() != null && !tx.getNote().isEmpty()) ? "  ·  " + tx.getNote() : "";
+            items.add(String.format("  %-14s  EGP %8.2f   %s%s",
+                    tx.getCategory().getDisplayName(),
+                    tx.getAmount(),
+                    DateUtils.toDisplayString(tx.getTimestamp()),
+                    note));
+        }
+        listRecentTx.setItems(items);
     }
 
-    /** Navigates to the cycle setup screen (700×600). */
     private void navigateToSetup() {
-        // TODO (Mahmoud Elsawy): Load /fxml/cycle-setup.fxml, set scene 700×600, update title.
-        throw new UnsupportedOperationException("navigateToSetup() not implemented yet — Mahmoud Elsawy");
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/fxml/cycle-setup.fxml"));
+            Scene scene = new Scene(loader.load(), 700, 600);
+            scene.getStylesheets().add(
+                    getClass().getResource("/css/styles.css").toExternalForm());
+            Stage stage = (Stage) progressSpent.getScene().getWindow();
+            stage.setScene(scene);
+            stage.setTitle("Masroofy — Setup Budget Cycle");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
-    /** "+ Log Expense" button handler. Navigates to expense-log.fxml (700×580). */
+    /** Log Expense button */
     @FXML
     private void onLogExpenseClick() {
-        // TODO (Mahmoud Elsawy): Load /fxml/expense-log.fxml, scene 700×580.
-        throw new UnsupportedOperationException("onLogExpenseClick() not implemented yet — Mahmoud Elsawy");
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/fxml/expense-log.fxml"));
+            Scene scene = new Scene(loader.load(), 700, 580);
+            scene.getStylesheets().add(
+                    getClass().getResource("/css/styles.css").toExternalForm());
+            Stage stage = (Stage) lblDailyLimit.getScene().getWindow();
+            stage.setScene(scene);
+            stage.setTitle("Masroofy — Log Expense");
+        } catch (Exception e) {
+            AlertUtils.showError("Could not open expense screen: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
-    /** "View History" button handler. Navigates to history.fxml (1000×680). */
+    /** View History button */
     @FXML
     private void onViewHistoryClick() {
-        // TODO (Mahmoud Elsawy): Load /fxml/history.fxml, scene 1000×680.
-        throw new UnsupportedOperationException("onViewHistoryClick() not implemented yet — Mahmoud Elsawy");
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/fxml/history.fxml"));
+            Scene scene = new Scene(loader.load(), 1000, 680);
+            scene.getStylesheets().add(
+                    getClass().getResource("/css/styles.css").toExternalForm());
+            Stage stage = (Stage) lblDailyLimit.getScene().getWindow();
+            stage.setScene(scene);
+            stage.setTitle("Masroofy — Transaction History");
+        } catch (Exception e) {
+            AlertUtils.showError("Could not open history: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
-    /** "+ New Cycle" nav button handler. Shows confirm dialog before navigating to setup. */
+    /** New Cycle button */
     @FXML
     private void onNewCycleClick() {
-        // TODO (Mahmoud Elsawy): AlertUtils.showConfirm(...) → if confirmed → navigateToSetup()
-        throw new UnsupportedOperationException("onNewCycleClick() not implemented yet — Mahmoud Elsawy");
+        boolean confirmed = AlertUtils.showConfirm("New Cycle",
+                "Starting a new cycle will deactivate the current one. Continue?");
+        if (confirmed)
+            navigateToSetup();
     }
 
-    /** Forces a full UI refresh (called by other controllers after a save). */
     public void refresh() {
         loadDashboard();
     }
