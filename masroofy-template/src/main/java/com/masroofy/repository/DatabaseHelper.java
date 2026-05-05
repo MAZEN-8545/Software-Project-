@@ -8,23 +8,8 @@ import java.sql.Statement;
 
 /**
  * Handles SQLite database connection and schema initialisation.
- *
- * <p><b>Important — DB path:</b> Use {@code System.getProperty("user.home")} to find a safe,
- * always-available directory. Do NOT use {@code getCodeSource().getLocation()} as it can return
- * {@code null} under IntelliJ/Maven and crash silently. The DB file lives at:
- * <pre>~/.masroofy/masroofy.db</pre></p>
- *
- * <p><b>Tables to create (if not exists):</b>
- * <ul>
- *   <li>{@code users} — user_id (PK), name, age</li>
- *   <li>{@code budget_cycles} — cycle_id (PK AUTOINCREMENT), user_id (FK), total_allowance,
- *       start_date, end_date, remaining_balance, safe_daily_limit, active (0/1)</li>
- *   <li>{@code transactions} — transaction_id (PK AUTOINCREMENT), cycle_id (FK), amount,
- *       note, category_type (TEXT), timestamp (TEXT)</li>
- * </ul>
- * </p>
- *
- * <p><b>OWNER: Mahmoud Mokhtar Mohamed (20242320)</b></p>
+ * 
+ *<b>OWNER: Mahmoud Mokhtar Mohamed (20242320)</b>
  *
  * @version 1.0
  */
@@ -34,13 +19,11 @@ public class DatabaseHelper {
     private static final String DB_URL;
 
     static {
-        // TODO (Mahmoud Mokhtar): Build DB_URL here.
-        // 1. File dir = new File(System.getProperty("user.home"), ".masroofy");
-        // 2. if (!dir.exists()) dir.mkdirs();
-        // 3. File dbFile = new File(dir, "masroofy.db");
-        // 4. DB_URL = "jdbc:sqlite:" + dbFile.getAbsolutePath().replace("\\", "/");
-        // 5. Print the path with System.out.println("[DB] Database: " + dbFile.getAbsolutePath());
-        DB_URL = null; // Replace this line with real implementation
+        File dir = new File(System.getProperty("user.home"), ".masroofy");
+        if (!dir.exists()) dir.mkdirs();
+        File dbFile = new File(dir, "masroofy.db");
+        DB_URL = "jdbc:sqlite:" + dbFile.getAbsolutePath().replace("\\", "/");
+        System.out.println("[DB] Database: " + dbFile.getAbsolutePath());
     }
 
     /**
@@ -50,8 +33,7 @@ public class DatabaseHelper {
      * @throws SQLException if the driver fails or the file cannot be opened
      */
     public static Connection connect() throws SQLException {
-        // TODO (Mahmoud Mokhtar): return DriverManager.getConnection(DB_URL);
-        throw new UnsupportedOperationException("connect() not implemented yet — Mahmoud Mokhtar");
+      return DriverManager.getConnection(DB_URL);
     }
 
     /**
@@ -61,10 +43,47 @@ public class DatabaseHelper {
      * <p>Use {@code CREATE TABLE IF NOT EXISTS} so repeated calls are safe.</p>
      */
     public static void initializeDatabase() {
-        // TODO (Mahmoud Mokhtar): Open connect() + Statement, then execute three CREATE TABLE IF NOT EXISTS
-        // statements for: users, budget_cycles, transactions.
-        // Wrap in try-with-resources. Print success/failure messages.
-        // See SDS class diagram for exact column names and types.
-        throw new UnsupportedOperationException("initializeDatabase() not implemented yet — Mahmoud Mokhtar");
+       try (Connection conn = connect(); Statement stmt = conn.createStatement()) {
+
+            stmt.execute("""
+                    CREATE TABLE IF NOT EXISTS users (
+                        user_id   INTEGER PRIMARY KEY,
+                        name      TEXT    NOT NULL,
+                        age       INTEGER
+                    )
+                    """);
+
+            stmt.execute("""
+                    CREATE TABLE IF NOT EXISTS budget_cycles (
+                        cycle_id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_id           INTEGER NOT NULL,
+                        total_allowance   REAL    NOT NULL,
+                        start_date        TEXT    NOT NULL,
+                        end_date          TEXT    NOT NULL,
+                        remaining_balance REAL    NOT NULL,
+                        safe_daily_limit  REAL    NOT NULL,
+                        active            INTEGER NOT NULL DEFAULT 1,
+                        FOREIGN KEY (user_id) REFERENCES users(user_id)
+                    )
+                    """);
+
+            stmt.execute("""
+                    CREATE TABLE IF NOT EXISTS transactions (
+                        transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        cycle_id       INTEGER NOT NULL,
+                        amount         REAL    NOT NULL,
+                        note           TEXT,
+                        category_type  TEXT    NOT NULL,
+                        timestamp      TEXT    NOT NULL,
+                        FOREIGN KEY (cycle_id) REFERENCES budget_cycles(cycle_id)
+                    )
+                    """);
+
+            System.out.println("[DB] Schema initialised successfully.");
+
+        } catch (SQLException e) {
+            System.err.println("[DB] Initialisation failed: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }

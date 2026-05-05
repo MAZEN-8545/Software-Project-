@@ -1,28 +1,23 @@
 package com.masroofy.repository;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
 import com.masroofy.model.BudgetCycle;
 import com.masroofy.model.Category;
 import com.masroofy.model.CategoryType;
 import com.masroofy.model.Transaction;
 import com.masroofy.util.DateUtils;
 
-import java.sql.*;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * Singleton repository — all SQLite CRUD for Masroofy.
- *
- * <p><b>Design patterns applied:</b>
- * <ul>
- *   <li><b>Singleton</b> — only one instance, preventing SQLite "database is locked" errors.</li>
- *   <li><b>SRP</b> — handles ONLY persistence; no business logic or UI here.</li>
- * </ul>
- * </p>
- *
- * <p><b>Sequence diagrams covered:</b> US#1, US#2, US#3, US#5, US#6, US#7.</p>
  *
  * <p><b>OWNER: Mahmoud Mokhtar Mohamed (20242320)</b></p>
  *
@@ -38,10 +33,8 @@ public class LocalStorageRepository {
      * Calls {@link DatabaseHelper#initializeDatabase()} and seeds the default user.
      */
     private LocalStorageRepository() {
-        // TODO (Mahmoud Mokhtar):
-        // 1. Call DatabaseHelper.initializeDatabase();
-        // 2. Call seedDefaultUser();
-        throw new UnsupportedOperationException("Constructor not implemented yet — Mahmoud Mokhtar");
+         DatabaseHelper.initializeDatabase();
+        seedDefaultUser();
     }
 
     /**
@@ -50,9 +43,8 @@ public class LocalStorageRepository {
      * @return the singleton instance
      */
     public static LocalStorageRepository getInstance() {
-        // TODO (Mahmoud Mokhtar): if (instance == null) instance = new LocalStorageRepository();
-        //                          return instance;
-        throw new UnsupportedOperationException("getInstance() not implemented yet — Mahmoud Mokhtar");
+        if (instance == null) instance = new LocalStorageRepository();
+        return instance;
     }
 
     // ── Seed ──────────────────────────────────────────────────────
@@ -62,63 +54,109 @@ public class LocalStorageRepository {
      * Uses {@code INSERT OR IGNORE} so it is safe to call repeatedly.
      */
     private void seedDefaultUser() {
-        // TODO (Mahmoud Mokhtar):
-        // Run: INSERT OR IGNORE INTO users(user_id, name, age) VALUES(1,'User',0)
-        throw new UnsupportedOperationException("seedDefaultUser() not implemented yet — Mahmoud Mokhtar");
+         String check  = "SELECT COUNT(*) FROM users WHERE user_id = 1";
+        String insert = "INSERT OR IGNORE INTO users(user_id, name, age) VALUES(1,'User',0)";
+        try (Connection conn = DatabaseHelper.connect();
+             Statement  stmt = conn.createStatement()) {
+            ResultSet rs = stmt.executeQuery(check);
+            if (rs.next() && rs.getInt(1) == 0) stmt.execute(insert);
+        } catch (SQLException e) { e.printStackTrace(); }
     }
 
     // ── BudgetCycle ───────────────────────────────────────────────
 
     /**
-     * Saves a brand-new cycle atomically and sets the generated cycleId on the object (US#1).
-     *
-     * <p><b>Critical rules:</b>
-     * <ol>
-     *   <li>Use {@code conn.setAutoCommit(false)} + explicit {@code commit()} / {@code rollback()}
-     *       so the UPDATE and INSERT are atomic.</li>
-     *   <li>First run: {@code UPDATE budget_cycles SET active = 0 WHERE user_id = 1 AND active = 1}
-     *       to deactivate any existing cycle.</li>
-     *   <li>Then INSERT the new cycle with {@code Statement.RETURN_GENERATED_KEYS} and call
-     *       {@code cycle.setCycleId(keys.getInt(1))} to set the auto-generated ID.</li>
-     * </ol>
-     * </p>
      *
      * @param cycle the new cycle to persist (cycleId will be set after save)
      */
     public void saveCycle(BudgetCycle cycle) {
-        // TODO (Mahmoud Mokhtar): Implement using the steps described above.
-        throw new UnsupportedOperationException("saveCycle() not implemented yet — Mahmoud Mokhtar");
+       String deactivate = "UPDATE budget_cycles SET active = 0 WHERE user_id = 1 AND active = 1";
+        String insert = """
+                INSERT INTO budget_cycles
+                (user_id, total_allowance, start_date, end_date, remaining_balance, safe_daily_limit, active)
+                VALUES (?, ?, ?, ?, ?, ?, 1)
+                """;
+        try (Connection conn = DatabaseHelper.connect()) {
+            conn.setAutoCommit(false);
+            try (Statement  deact = conn.createStatement();
+                 PreparedStatement ps = conn.prepareStatement(insert, Statement.RETURN_GENERATED_KEYS)) {
+
+                deact.execute(deactivate);
+
+                ps.setInt(1, 1);                                   // user_id
+                ps.setDouble(2, cycle.getTotalAllowance());
+                ps.setString(3, cycle.getStartDate().toString());
+                ps.setString(4, cycle.getEndDate().toString());
+                ps.setDouble(5, cycle.getRemainingBalance());
+                ps.setDouble(6, cycle.getSafeDailyLimit());
+                ps.executeUpdate();
+
+                ResultSet keys = ps.getGeneratedKeys();
+                if (keys.next()) cycle.setCycleId(keys.getInt(1));
+
+                conn.commit();
+                System.out.println("[DB] Cycle saved, ID=" + cycle.getCycleId());
+
+            } catch (SQLException inner) {
+                conn.rollback();
+                System.err.println("[DB] saveCycle rolled back: " + inner.getMessage());
+                throw inner;
+            }
+        } catch (SQLException e) {
+            System.err.println("[DB] saveCycle error: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     /**
-     * Persists updated balance, safeDailyLimit, and active flag after each expense or rollover
-     * (US#2, US#5). Must be called after every saveTransaction() to keep the DB in sync.
-     *
-     * <p>SQL: {@code UPDATE budget_cycles SET remaining_balance=?, safe_daily_limit=?, active=?
-     * WHERE cycle_id=?}</p>
-     *
+     * 
      * @param cycle the cycle object with updated values
      */
     public void updateCycle(BudgetCycle cycle) {
-        // TODO (Mahmoud Mokhtar): Use a PreparedStatement to UPDATE the three columns.
-        throw new UnsupportedOperationException("updateCycle() not implemented yet — Mahmoud Mokhtar");
+  String sql = """
+                UPDATE budget_cycles
+                SET remaining_balance = ?, safe_daily_limit = ?, active = ?
+                WHERE cycle_id = ?
+                """;
+        try (Connection conn = DatabaseHelper.connect();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setDouble(1, cycle.getRemainingBalance());
+            ps.setDouble(2, cycle.getSafeDailyLimit());
+            ps.setInt(3, cycle.isActive() ? 1 : 0);
+            ps.setInt(4, cycle.getCycleId());
+            ps.executeUpdate();
+            System.out.println("[DB] Cycle updated ID=" + cycle.getCycleId()
+                    + " balance=" + cycle.getRemainingBalance());
+        } catch (SQLException e) { e.printStackTrace(); }
     }
 
     /**
      * Returns the active cycle for the given user, or {@code null} if none exists (US#3).
      *
-     * <p>SQL: {@code SELECT * FROM budget_cycles WHERE user_id=? AND active=1 ORDER BY cycle_id DESC LIMIT 1}</p>
-     *
-     * <p>Build a {@link BudgetCycle} from the result set using setters, including parsing dates
-     * with {@link LocalDate#parse(CharSequence)}.</p>
-     *
      * @param userId the user's ID (always 1 in Masroofy)
      * @return the active {@link BudgetCycle}, or {@code null}
      */
     public BudgetCycle getActiveCycle(int userId) {
-        // TODO (Mahmoud Mokhtar): Execute the SELECT query, parse the ResultSet into a BudgetCycle,
-        //                          return it (or null if no row found).
-        throw new UnsupportedOperationException("getActiveCycle() not implemented yet — Mahmoud Mokhtar");
+      String sql = "SELECT * FROM budget_cycles WHERE user_id = ? AND active = 1 ORDER BY cycle_id DESC LIMIT 1";
+        try (Connection conn = DatabaseHelper.connect();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                BudgetCycle c = new BudgetCycle();
+                c.setCycleId(rs.getInt("cycle_id"));
+                c.setTotalAllowance(rs.getDouble("total_allowance"));
+                c.setStartDate(LocalDate.parse(rs.getString("start_date")));
+                c.setEndDate(LocalDate.parse(rs.getString("end_date")));
+                c.setRemainingBalance(rs.getDouble("remaining_balance"));
+                c.setSafeDailyLimit(rs.getDouble("safe_daily_limit"));
+                c.setActive(rs.getInt("active") == 1);
+                System.out.println("[DB] Active cycle found ID=" + c.getCycleId());
+                return c;
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        System.out.println("[DB] No active cycle for user " + userId);
+        return null;
     }
 
     /**
@@ -127,10 +165,11 @@ public class LocalStorageRepository {
      * @param cycleId the ID of the cycle to clear
      */
     public void clearCycleData(int cycleId) {
-        // TODO (Mahmoud Mokhtar):
-        // 1. DELETE FROM transactions WHERE cycle_id = cycleId
-        // 2. UPDATE budget_cycles SET active = 0 WHERE cycle_id = cycleId
-        throw new UnsupportedOperationException("clearCycleData() not implemented yet — Mahmoud Mokhtar");
+        try (Connection conn = DatabaseHelper.connect();
+             Statement stmt = conn.createStatement()) {
+            stmt.execute("DELETE FROM transactions WHERE cycle_id = " + cycleId);
+            stmt.execute("UPDATE budget_cycles SET active = 0 WHERE cycle_id = " + cycleId);
+        } catch (SQLException e) { e.printStackTrace(); }
     }
 
     // ── Transactions ──────────────────────────────────────────────
@@ -138,33 +177,50 @@ public class LocalStorageRepository {
     /**
      * Inserts a new transaction and sets the auto-generated ID on the object (US#2).
      *
-     * <p>Columns: cycle_id, amount, note, category_type (as enum name String), timestamp
-     * (formatted with {@link DateUtils#toStorageDateTimeString(LocalDateTime)}).</p>
-     *
      * @param cycleId the active cycle's ID
      * @param tx      the transaction to persist (transactionId will be set after save)
      */
     public void saveTransaction(int cycleId, Transaction tx) {
-        // TODO (Mahmoud Mokhtar): Use PreparedStatement + RETURN_GENERATED_KEYS.
-        //                          Call tx.setTransactionId(keys.getInt(1)) after execute.
-        throw new UnsupportedOperationException("saveTransaction() not implemented yet — Mahmoud Mokhtar");
+      String sql = """
+                INSERT INTO transactions (cycle_id, amount, note, category_type, timestamp)
+                VALUES (?, ?, ?, ?, ?)
+                """;
+        try (Connection conn = DatabaseHelper.connect();
+             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setInt(1, cycleId);
+            ps.setDouble(2, tx.getAmount());
+            ps.setString(3, tx.getNote());
+            ps.setString(4, tx.getCategory().getType().name());
+            ps.setString(5, DateUtils.toStorageDateTimeString(tx.getTimestamp()));
+            ps.executeUpdate();
+            ResultSet keys = ps.getGeneratedKeys();
+            if (keys.next()) tx.setTransactionId(keys.getInt(1));
+            System.out.println("[DB] Transaction saved ID=" + tx.getTransactionId());
+        } catch (SQLException e) { e.printStackTrace(); }
     }
 
     /**
      * Returns all transactions for a cycle, newest first (US#7).
      *
-     * <p>SQL: {@code SELECT * FROM transactions WHERE cycle_id=? ORDER BY timestamp DESC}</p>
-     *
-     * <p>For each row: parse category_type via {@code CategoryType.valueOf(...)},
-     * parse timestamp via {@link DateUtils#fromStorageDateTimeString(String)},
-     * construct a {@link Transaction} using the full constructor.</p>
-     *
      * @param cycleId the cycle to query
      * @return list of transactions, may be empty
      */
     public List<Transaction> getTransactions(int cycleId) {
-        // TODO (Mahmoud Mokhtar): Execute SELECT, build Transaction objects in a loop, return list.
-        throw new UnsupportedOperationException("getTransactions() not implemented yet — Mahmoud Mokhtar");
+        String sql = "SELECT * FROM transactions WHERE cycle_id = ? ORDER BY timestamp DESC";
+        List<Transaction> list = new ArrayList<>();
+        try (Connection conn = DatabaseHelper.connect();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, cycleId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                CategoryType  ct  = CategoryType.valueOf(rs.getString("category_type"));
+                Category      cat = new Category(ct);
+                LocalDateTime ts  = DateUtils.fromStorageDateTimeString(rs.getString("timestamp"));
+                list.add(new Transaction(rs.getInt("transaction_id"),
+                        rs.getDouble("amount"), rs.getString("note"), cat, ts));
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
     }
 
     /**
@@ -173,8 +229,15 @@ public class LocalStorageRepository {
      * @param tx the transaction with updated fields; transactionId identifies the row
      */
     public void updateTransaction(Transaction tx) {
-        // TODO (Mahmoud Mokhtar): UPDATE transactions SET amount=?, category_type=?, note=? WHERE transaction_id=?
-        throw new UnsupportedOperationException("updateTransaction() not implemented yet — Mahmoud Mokhtar");
+        String sql = "UPDATE transactions SET amount=?, category_type=?, note=? WHERE transaction_id=?";
+        try (Connection conn = DatabaseHelper.connect();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setDouble(1, tx.getAmount());
+            ps.setString(2, tx.getCategory().getType().name());
+            ps.setString(3, tx.getNote());
+            ps.setInt(4, tx.getTransactionId());
+            ps.executeUpdate();
+        } catch (SQLException e) { e.printStackTrace(); }
     }
 
     /**
@@ -183,18 +246,16 @@ public class LocalStorageRepository {
      * @param transactionId the ID of the transaction to delete
      */
     public void deleteTransaction(int transactionId) {
-        // TODO (Mahmoud Mokhtar): DELETE FROM transactions WHERE transaction_id=?
-        throw new UnsupportedOperationException("deleteTransaction() not implemented yet — Mahmoud Mokhtar");
+       try (Connection conn = DatabaseHelper.connect();
+             PreparedStatement ps = conn.prepareStatement(
+                     "DELETE FROM transactions WHERE transaction_id = ?")) {
+            ps.setInt(1, transactionId);
+            ps.executeUpdate();
+        } catch (SQLException e) { e.printStackTrace(); }
     }
 
     /**
      * Filtered transaction query — supports category, date-from, and date-to filters (US#7).
-     *
-     * <p>Build the WHERE clause dynamically: always include {@code cycle_id = ?}.
-     * Append {@code AND category_type = ?} only if type != null.
-     * Append {@code AND timestamp >= ?} only if fromDate != null.
-     * Append {@code AND timestamp <= ?} (with " 23:59:59" appended) only if toDate != null.
-     * <b>Never use string concatenation for user values — use PreparedStatement parameters.</b></p>
      *
      * @param cycleId  the active cycle ID
      * @param type     filter by category (null = all categories)
@@ -204,8 +265,30 @@ public class LocalStorageRepository {
      */
     public List<Transaction> filterTransactions(int cycleId, CategoryType type,
                                                 String fromDate, String toDate) {
-        // TODO (Mahmoud Mokhtar): Build dynamic SQL with StringBuilder, set params with index variable,
-        //                          reuse the same row-parsing logic as getTransactions().
-        throw new UnsupportedOperationException("filterTransactions() not implemented yet — Mahmoud Mokhtar");
+  StringBuilder sql = new StringBuilder(
+                "SELECT * FROM transactions WHERE cycle_id = ?");
+        if (type     != null) sql.append(" AND category_type = ?");
+        if (fromDate != null) sql.append(" AND timestamp >= ?");
+        if (toDate   != null) sql.append(" AND timestamp <= ?");
+        sql.append(" ORDER BY timestamp DESC");
+
+        List<Transaction> list = new ArrayList<>();
+        try (Connection conn = DatabaseHelper.connect();
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            int i = 1;
+            ps.setInt(i++, cycleId);
+            if (type     != null) ps.setString(i++, type.name());
+            if (fromDate != null) ps.setString(i++, fromDate);
+            if (toDate   != null) ps.setString(i++, toDate + " 23:59:59");
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                CategoryType  ct  = CategoryType.valueOf(rs.getString("category_type"));
+                Category      cat = new Category(ct);
+                LocalDateTime ts  = DateUtils.fromStorageDateTimeString(rs.getString("timestamp"));
+                list.add(new Transaction(rs.getInt("transaction_id"),
+                        rs.getDouble("amount"), rs.getString("note"), cat, ts));
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
     }
 }
