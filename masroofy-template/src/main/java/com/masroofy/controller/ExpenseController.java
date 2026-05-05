@@ -1,5 +1,9 @@
 package com.masroofy.controller;
 
+import java.net.URL;
+import java.time.LocalDateTime;
+import java.util.ResourceBundle;
+
 import com.masroofy.Main;
 import com.masroofy.model.BudgetCycle;
 import com.masroofy.model.Category;
@@ -8,6 +12,7 @@ import com.masroofy.model.Transaction;
 import com.masroofy.service.BudgetCalculator;
 import com.masroofy.service.NotificationService;
 import com.masroofy.util.AlertUtils;
+
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -18,25 +23,14 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
-import java.net.URL;
-import java.time.LocalDateTime;
-import java.util.ResourceBundle;
-
 /**
- * Controller for {@code expense-log.fxml} — handles US#2 (Rapid Expense Logging)
- * and US#6 (Budget Threshold Notification).
+ * Controller for expense-log.fxml — handles US#2 and US#6.
  *
- * <p><b>Sequence diagram (US#2):</b> User → Transaction.validateAmount() →
- * LocalStorageRepository.saveTransaction() → BudgetCycle.recalculateLimit() →
- * NotificationService.checkAndNotify() → navigate to dashboard.</p>
- *
- * <p><b>OWNER: Mahmoud Mohamed Elsawy (20240558)</b></p>
- *
- * @version 1.0
+ * @author Mahmoud Mohamed Elsawy
+ * @version 2.1
  */
 public class ExpenseController implements Initializable {
 
-    // ── FXML fields ───────────────────────────────────────────────
     @FXML private TextField               txtAmount;
     @FXML private ChoiceBox<CategoryType> cbCategory;
     @FXML private TextField               txtNote;
@@ -45,72 +39,108 @@ public class ExpenseController implements Initializable {
 
     private NotificationService notificationService;
 
-    /**
-     * Called automatically by JavaFX after FXML loading.
-     * Populates the category ChoiceBox and shows today's safe daily limit.
-     */
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        // TODO (Mahmoud Elsawy):
-        // 1. notificationService = new NotificationService();
-        // 2. cbCategory.setItems(FXCollections.observableArrayList(CategoryType.values()));
-        // 3. cbCategory.setValue(CategoryType.FOOD);
-        // 4. lblError.setVisible(false);
-        // 5. Guard: if (Main.getRepository() == null) { lblDailyLimitHint.setText("—"); return; }
-        // 6. BudgetCycle activeCycle = Main.getRepository().getActiveCycle(1);
-        // 7. If activeCycle != null: compute SDL and set lblDailyLimitHint text.
-        //    Else: set text "No active cycle".
-        throw new UnsupportedOperationException("initialize() not implemented yet — Mahmoud Elsawy");
+        notificationService = new NotificationService();
+        cbCategory.setItems(FXCollections.observableArrayList(CategoryType.values()));
+        cbCategory.setValue(CategoryType.FOOD);
+        lblError.setVisible(false);
+
+        // Guard: repository may not be ready if FXML is loaded before Application.start()
+        if (Main.getRepository() == null) {
+            lblDailyLimitHint.setText("—");
+            return;
+        }
+
+        BudgetCycle activeCycle = Main.getRepository().getActiveCycle(1);
+        if (activeCycle != null) {
+            BudgetCalculator calc = new BudgetCalculator();
+            double sdl = calc.calculateSafeDailyLimit(
+                    activeCycle.getRemainingBalance(),
+                    (int) activeCycle.getRemainingDays());
+            lblDailyLimitHint.setText(String.format("EGP %.2f", sdl));
+        } else {
+            lblDailyLimitHint.setText("No active cycle");
+        }
     }
 
     /**
-     * Triggered by the "Save Expense" button (US#2).
+     * US#2 — Save Expense button handler.
      *
-     * <p><b>CRITICAL:</b> Always fetch the active cycle FRESH from the DB here (never reuse the
-     * one loaded in {@code initialize()}). After saving, call {@code updateCycle()} to persist
-     * the new balance — otherwise the DB stays stale.</p>
-     *
-     * <p>Steps:
-     * <ol>
-     *   <li>Hide lblError. Guard: repository must not be null.</li>
-     *   <li>Parse amount from txtAmount; show error on blank/bad input.</li>
-     *   <li>Call {@link Transaction#validateAmount(double)}.</li>
-     *   <li>Read selectedType from cbCategory; build a {@link Category}.</li>
-     *   <li>Fetch fresh active cycle; show error if null.</li>
-     *   <li>Create Transaction, set note, call {@code Main.getRepository().saveTransaction(cycleId, tx)}.</li>
-     *   <li>Update balance: {@code cycle.setRemainingBalance(balance - amount)}.</li>
-     *   <li>Call {@code cycle.recalculateLimit()}.</li>
-     *   <li>Call {@code Main.getRepository().updateCycle(cycle)} — persist the updated balance!</li>
-     *   <li>Compute totalSpent, call {@code notificationService.checkAndNotify(cycle, totalSpent)}.</li>
-     *   <li>Show success alert, navigate to dashboard.</li>
-     * </ol>
-     * </p>
+     * KEY FIX: always fetch the active cycle fresh from the DB at click time.
+     * The field populated in initialize() is only used for the hint label and
+     * can be stale by the time the user clicks Save. More importantly, after
+     * saving the transaction we call updateCycle() to persist the new
+     * remaining_balance. Without this the balance column stays at its original
+     * value and every subsequent getActiveCycle() returns wrong data.
      */
     @FXML
     private void onSaveExpenseClick() {
-        // TODO (Mahmoud Elsawy): Implement the 11 steps listed above.
-        throw new UnsupportedOperationException("onSaveExpenseClick() not implemented yet — Mahmoud Elsawy");
+        lblError.setVisible(false);
+
+        if (Main.getRepository() == null) {
+            showError("Application not ready — please restart.");
+            return;
+        }
+
+        try {
+            String raw = txtAmount.getText();
+            if (raw == null || raw.isBlank()) { showError("Please enter an amount."); return; }
+
+            double amount = Double.parseDouble(raw.trim());
+            Transaction.validateAmount(amount);
+
+            CategoryType selectedType = cbCategory.getValue();
+            if (selectedType == null) throw new IllegalArgumentException("Please select a category.");
+            Category category = new Category(selectedType);
+
+            // Always fetch fresh — never reuse the initialize() snapshot
+            BudgetCycle cycle = Main.getRepository().getActiveCycle(1);
+            if (cycle == null) {
+                showError("No active budget cycle. Please set up a cycle first.");
+                return;
+            }
+
+            // Persist transaction
+            Transaction tx = new Transaction(amount, category, LocalDateTime.now());
+            tx.setNote(txtNote.getText() == null ? "" : txtNote.getText().trim());
+            Main.getRepository().saveTransaction(cycle.getCycleId(), tx);
+
+            // Update balance → persist updated cycle → DB stays in sync
+            cycle.setRemainingBalance(cycle.getRemainingBalance() - amount);
+            cycle.recalculateLimit();
+            Main.getRepository().updateCycle(cycle);
+
+            // Notifications (US#6)
+            double totalSpent = cycle.getTotalAllowance() - cycle.getRemainingBalance();
+            notificationService.checkAndNotify(cycle, totalSpent);
+
+            AlertUtils.showInfo("Saved!",
+                    "Expense of EGP " + String.format("%.2f", amount) + " saved successfully.");
+            navigateToDashboard();
+
+        } catch (NumberFormatException e) {
+            showError("Please enter a valid number.");
+        } catch (IllegalArgumentException e) {
+            showError(e.getMessage());
+        } catch (Exception e) {
+            showError("Failed to save expense: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
-    /** "← Dashboard" / "Cancel" button handler — navigate back without saving. */
-    @FXML
-    private void onBackClick() {
-        // TODO (Mahmoud Elsawy): Call navigateToDashboard().
-        throw new UnsupportedOperationException("onBackClick() not implemented yet — Mahmoud Elsawy");
-    }
+    @FXML private void onBackClick() { navigateToDashboard(); }
 
-    private void showError(String msg) {
-        // TODO (Mahmoud Elsawy): lblError.setText(msg); lblError.setVisible(true);
-        throw new UnsupportedOperationException("showError() not implemented — Mahmoud Elsawy");
-    }
+    private void showError(String msg) { lblError.setText(msg); lblError.setVisible(true); }
 
-    /**
-     * Navigates to the dashboard screen.
-     * Loads {@code /fxml/dashboard.fxml} with window size 1050×720.
-     */
     private void navigateToDashboard() {
-        // TODO (Mahmoud Elsawy): Same pattern as CycleSetupController.navigateToDashboard().
-        //                          Use txtAmount.getScene().getWindow() to get the Stage.
-        throw new UnsupportedOperationException("navigateToDashboard() not implemented — Mahmoud Elsawy");
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/dashboard.fxml"));
+            Scene scene = new Scene(loader.load(), 1050, 720);
+            scene.getStylesheets().add(getClass().getResource("/css/styles.css").toExternalForm());
+            Stage stage = (Stage) txtAmount.getScene().getWindow();
+            stage.setScene(scene);
+            stage.setTitle("Masroofy — Dashboard");
+        } catch (Exception e) { e.printStackTrace(); }
     }
 }
