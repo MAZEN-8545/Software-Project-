@@ -31,11 +31,16 @@ import javafx.stage.Stage;
  */
 public class ExpenseController implements Initializable {
 
-    @FXML private TextField               txtAmount;
-    @FXML private ChoiceBox<CategoryType> cbCategory;
-    @FXML private TextField               txtNote;
-    @FXML private Label                   lblError;
-    @FXML private Label                   lblDailyLimitHint;
+    @FXML
+    private TextField txtAmount;
+    @FXML
+    private ChoiceBox<CategoryType> cbCategory;
+    @FXML
+    private TextField txtNote;
+    @FXML
+    private Label lblError;
+    @FXML
+    private Label lblDailyLimitHint;
 
     private NotificationService notificationService;
 
@@ -46,7 +51,8 @@ public class ExpenseController implements Initializable {
         cbCategory.setValue(CategoryType.FOOD);
         lblError.setVisible(false);
 
-        // Guard: repository may not be ready if FXML is loaded before Application.start()
+        // Guard: repository may not be ready if FXML is loaded before
+        // Application.start()
         if (Main.getRepository() == null) {
             lblDailyLimitHint.setText("—");
             return;
@@ -85,13 +91,17 @@ public class ExpenseController implements Initializable {
 
         try {
             String raw = txtAmount.getText();
-            if (raw == null || raw.isBlank()) { showError("Please enter an amount."); return; }
+            if (raw == null || raw.isBlank()) {
+                showError("Please enter an amount.");
+                return;
+            }
 
             double amount = Double.parseDouble(raw.trim());
             Transaction.validateAmount(amount);
 
             CategoryType selectedType = cbCategory.getValue();
-            if (selectedType == null) throw new IllegalArgumentException("Please select a category.");
+            if (selectedType == null)
+                throw new IllegalArgumentException("Please select a category.");
             Category category = new Category(selectedType);
 
             // Always fetch fresh — never reuse the initialize() snapshot
@@ -129,9 +139,15 @@ public class ExpenseController implements Initializable {
         }
     }
 
-    @FXML private void onBackClick() { navigateToDashboard(); }
+    @FXML
+    private void onBackClick() {
+        navigateToDashboard();
+    }
 
-    private void showError(String msg) { lblError.setText(msg); lblError.setVisible(true); }
+    private void showError(String msg) {
+        lblError.setText(msg);
+        lblError.setVisible(true);
+    }
 
     private void navigateToDashboard() {
         try {
@@ -141,6 +157,8 @@ public class ExpenseController implements Initializable {
             Stage stage = (Stage) txtAmount.getScene().getWindow();
             stage.setScene(scene);
             stage.setTitle("Masroofy — Dashboard");
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
