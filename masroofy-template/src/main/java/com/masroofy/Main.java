@@ -1,13 +1,11 @@
 package com.masroofy;
 
-import com.masroofy.model.BudgetCycle;
-import com.masroofy.repository.LocalStorageRepository;
-import javafx.application.Application;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Scene;
-import javafx.stage.Stage;
-
 import java.io.IOException;
+
+import com.masroofy.repository.LocalStorageRepository;
+
+import javafx.application.Application;
+import javafx.stage.Stage;
 
 /**
  * Main entry point for the Masroofy Budget Management application.

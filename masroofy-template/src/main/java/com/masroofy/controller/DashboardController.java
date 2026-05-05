@@ -1,27 +1,15 @@
 package com.masroofy.controller;
 
-import com.masroofy.Main;
-import com.masroofy.model.BudgetCycle;
-import com.masroofy.model.Transaction;
-import com.masroofy.service.BudgetCalculator;
+import java.net.URL;
+import java.util.ResourceBundle;
+
 import com.masroofy.service.DashboardService;
-import com.masroofy.service.DashboardService.DashboardSummary;
-import com.masroofy.util.AlertUtils;
-import com.masroofy.util.DateUtils;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
+
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ProgressBar;
-import javafx.stage.Stage;
-
-import java.net.URL;
-import java.util.List;
-import java.util.ResourceBundle;
 
 /**
  * Controller for {@code dashboard.fxml} — handles US#3 (Dynamic Daily Limit View)

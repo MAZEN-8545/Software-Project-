@@ -1,25 +1,18 @@
 package com.masroofy.controller;
 
-import com.masroofy.Main;
-import com.masroofy.model.BudgetCycle;
+import java.net.URL;
+import java.util.List;
+import java.util.ResourceBundle;
+
 import com.masroofy.model.CategoryType;
 import com.masroofy.model.Transaction;
-import com.masroofy.util.DateUtils;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
+
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.scene.Scene;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
-import javafx.stage.Stage;
-
-import java.net.URL;
-import java.util.List;
-import java.util.ResourceBundle;
 
 /**
  * Controller for {@code history.fxml} — handles US#7 (Transaction History Review).
