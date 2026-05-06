@@ -16,21 +16,6 @@ Team Members & Ownership:
       DashboardController.java, HistoryController.java
   • Mohamed Arafa Khalaf                  — 20240517
       DateUtils.java, AlertUtils.java, StateManager.java
-
-----------------------------------------------------------
-WHAT IS THIS TEMPLATE?
-----------------------------------------------------------
-Every Java file contains:
-  - Full Javadoc on every class and method (Task 4 ready)
-  - The correct method signatures matching the SDS class diagram
-  - Step-by-step TODO comments inside each method body
-  - throw new UnsupportedOperationException(...) guards so the
-    code compiles but reminds you what's unfinished
-
-The FXML files (cycle-setup, dashboard, expense-log, history),
-CSS stylesheet, pom.xml, and .gitignore are ALREADY COMPLETE
-— do not change them unless you know what you're doing.
-
 ----------------------------------------------------------
 HOW TO START
 ----------------------------------------------------------
