@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.chart.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
@@ -111,6 +112,14 @@
                            text="No transactions yet — log your first expense above."
                            style="-fx-text-fill:#2D5A72;-fx-font-size:14px;-fx-padding:20;"
                            visible="false" maxWidth="680"/>
+                </VBox>
+
+                <!-- US#4: Spending Insights Pie Chart -->
+                <VBox spacing="8" maxWidth="680" alignment="TOP_CENTER">
+                    <Label text="SPENDING INSIGHTS"
+                           style="-fx-font-size:11px;-fx-font-weight:bold;-fx-text-fill:#4E7A8E;"/>
+                    <PieChart fx:id="pieChartSpending" prefHeight="300" maxWidth="680"
+                              style="-fx-background-color:#142230;-fx-background-radius:12px;"/>
                 </VBox>
 
             </VBox>

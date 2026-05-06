@@ -2,6 +2,7 @@ package com.masroofy.controller;
 
 import java.net.URL;
 import java.util.List;
+import java.util.Map;
 import java.util.ResourceBundle;
 
 import com.masroofy.Main;
@@ -19,6 +20,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
+import javafx.scene.chart.PieChart;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ProgressBar;
@@ -53,6 +55,8 @@ public class DashboardController implements Initializable {
     private ListView<String> listRecentTx;
     @FXML
     private Label lblNoTx;
+    @FXML
+    private PieChart pieChartSpending;
 
     private DashboardService dashboardService;
 
@@ -126,6 +130,9 @@ public class DashboardController implements Initializable {
         // Recent transactions (last 5)
         loadRecentTransactions(cycle.getCycleId());
 
+        // US#4: Pie chart — spending by category
+        loadPieChart(cycle.getCycleId());
+
         // Cycle ended prompt
         if (summary.isCycleEnded) {
             boolean start = AlertUtils.showConfirm("Cycle Ended",
@@ -160,6 +167,27 @@ public class DashboardController implements Initializable {
                     note));
         }
         listRecentTx.setItems(items);
+    }
+
+    /**
+     * Loads the pie chart showing spending breakdown by category (US#4).
+     */
+    private void loadPieChart(int cycleId) {
+        Map<com.masroofy.model.Category, Double> data = dashboardService.getPieChartData(cycleId);
+        if (data.isEmpty()) {
+            pieChartSpending.setVisible(false);
+            return;
+        }
+        pieChartSpending.setVisible(true);
+        ObservableList<PieChart.Data> pieData = FXCollections.observableArrayList();
+        for (Map.Entry<com.masroofy.model.Category, Double> e : data.entrySet()) {
+            String label = e.getKey().getDisplayName();
+            double pct = e.getValue();
+            pieData.add(new PieChart.Data(label + " (" + String.format("%.1f%%", pct) + ")", pct));
+        }
+        pieChartSpending.setData(pieData);
+        pieChartSpending.setTitle("Spending by Category");
+        pieChartSpending.setStyle("-fx-text-fill:#E8F4F8;");
     }
 
     private void navigateToSetup() {
