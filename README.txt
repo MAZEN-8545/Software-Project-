@@ -110,8 +110,8 @@ PROJECT STRUCTURE
       StateManager.java          — Mohamed Arafa
 
   src/main/resources/
-    fxml/   (4 screens — COMPLETE, do not edit)
-    css/    (styles.css — COMPLETE, do not edit)
+    fxml/   (4 screens — COMPLETE)
+    css/    (styles.css — COMPLETE)
 
 ----------------------------------------------------------
 GENERATE JAVADOC (Task 4)
