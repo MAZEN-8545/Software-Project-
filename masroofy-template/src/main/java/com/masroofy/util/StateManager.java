@@ -6,7 +6,7 @@ import com.masroofy.model.BudgetCycle;
  * Implements the state machine for a {@link BudgetCycle} as described in the
  * SDS State Diagram.
  *
- * <b>OWNER: Mohamed Arafa Khalaf (20240517)</b></p>
+ * <b>OWNER: Mohamed Arafa Khalaf (20240517)</b>
  *
  * @version 1.0
  */

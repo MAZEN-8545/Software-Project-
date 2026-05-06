@@ -7,7 +7,7 @@ import java.time.format.DateTimeFormatter;
 /**
  * Utility class providing date formatting and parsing helpers for Masroofy.
  *
- * <b>OWNER: Mohamed Arafa Khalaf (20240517)</b></p>
+ * <b>OWNER: Mohamed Arafa Khalaf (20240517)</b>
  *
  * @version 1.0
  */

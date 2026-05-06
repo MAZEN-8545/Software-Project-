@@ -7,7 +7,7 @@ import javafx.scene.control.ButtonType;
 /**
  * Utility class for showing JavaFX alert dialogs.
  *
- * <b>OWNER: Mohamed Arafa Khalaf (20240517)</b></p>
+ * <b>OWNER: Mohamed Arafa Khalaf (20240517)</b>
  *
  * @version 1.0
  */

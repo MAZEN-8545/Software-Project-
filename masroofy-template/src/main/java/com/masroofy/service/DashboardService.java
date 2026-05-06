@@ -11,7 +11,7 @@ import com.masroofy.repository.LocalStorageRepository;
 /**
  * Facade service — shields the Dashboard UI from backend complexity.
  * 
- * <b>Sequence diagrams covered:</b> US#3, US#4.</p>
+ * <b>Sequence diagrams covered:</b> US#3, US#4.
  *
  * <p>
  * <b>OWNER: Mahmoud Mokhtar Mohamed (20242320)</b></p>

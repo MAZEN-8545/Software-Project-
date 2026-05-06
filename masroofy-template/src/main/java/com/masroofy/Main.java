@@ -27,7 +27,7 @@ public class Main extends Application {
 
     /**
      * JavaFX start method — called by the JavaFX runtime after
-     * {@link #launch()}.
+     * launch().
      *
      * @param stage the primary window provided by JavaFX
      * @throws IOException if an FXML file cannot be loaded
