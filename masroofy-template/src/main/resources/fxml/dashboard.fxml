@@ -15,8 +15,12 @@
                    style="-fx-font-size:20px;-fx-font-weight:bold;-fx-text-fill:#E8F4F8;"/>
             <Label text="●" style="-fx-text-fill:#3498DB;-fx-font-size:20px;"/>
             <Region HBox.hgrow="ALWAYS"/>
+            <Button text="⚙ Settings" onAction="#onSettingsClick"
+                    style="-fx-background-color:transparent;-fx-text-fill:#7BAFC4;-fx-cursor:hand;-fx-font-size:13px;-fx-padding:6 14;-fx-background-radius:20px;"/>
             <Button text="History" onAction="#onViewHistoryClick"
                     style="-fx-background-color:transparent;-fx-text-fill:#7BAFC4;-fx-cursor:hand;-fx-font-size:13px;-fx-padding:6 14;-fx-background-radius:20px;"/>
+            <Button text="↻ Reset Cycle" onAction="#onResetCycleClick"
+                    style="-fx-background-color:transparent;-fx-text-fill:#E74C3C;-fx-cursor:hand;-fx-font-size:13px;-fx-padding:6 14;-fx-background-radius:20px;"/>
             <Button text="+ New Cycle" onAction="#onNewCycleClick"
                     style="-fx-background-color:transparent;-fx-text-fill:#7BAFC4;-fx-cursor:hand;-fx-font-size:13px;-fx-padding:6 14;-fx-background-radius:20px;"/>
         </HBox>

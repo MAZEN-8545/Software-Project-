@@ -250,6 +250,53 @@ public class DashboardController implements Initializable {
             navigateToSetup();
     }
 
+    /**
+     * US#11 — Reset Cycle Early: clears all transactions and resets the current cycle.
+     */
+    @FXML
+    private void onResetCycleClick() {
+        BudgetCycle cycle = Main.getRepository().getActiveCycle(1);
+        if (cycle == null) {
+            AlertUtils.showError("No active cycle found.");
+            return;
+        }
+
+        boolean confirmed = AlertUtils.showConfirm("Reset Cycle Early",
+                "This will delete ALL transactions and reset your cycle to start fresh.\n\n" +
+                "Your total allowance will remain: EGP " + String.format("%.2f", cycle.getTotalAllowance()) + "\n\n" +
+                "This action cannot be undone. Continue?");
+
+        if (confirmed) {
+            // Clear all transactions and reset cycle
+            Main.getRepository().resetCycleEarly(cycle.getCycleId(), cycle.getTotalAllowance());
+
+            AlertUtils.showInfo("Cycle Reset", "Your cycle has been reset. All transactions have been cleared.");
+
+            // Refresh dashboard
+            loadDashboard();
+        }
+    }
+
+    /**
+     * US#12 — Navigate to Settings screen.
+     */
+    @FXML
+    private void onSettingsClick() {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/fxml/settings.fxml"));
+            Scene scene = new Scene(loader.load(), 600, 500);
+            scene.getStylesheets().add(
+                    getClass().getResource("/css/styles.css").toExternalForm());
+            Stage stage = (Stage) lblDailyLimit.getScene().getWindow();
+            stage.setScene(scene);
+            stage.setTitle("Masroofy — Settings");
+        } catch (Exception e) {
+            AlertUtils.showError("Could not open settings: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
     public void refresh() {
         loadDashboard();
     }

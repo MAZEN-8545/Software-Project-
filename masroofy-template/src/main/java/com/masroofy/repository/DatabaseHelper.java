@@ -79,6 +79,22 @@ public class DatabaseHelper {
                     )
                     """);
 
+            // US#12 — Privacy Lock table for local authentication
+            stmt.execute("""
+                    CREATE TABLE IF NOT EXISTS privacy_lock (
+                        lock_id      INTEGER PRIMARY KEY DEFAULT 1,
+                        enabled      INTEGER NOT NULL DEFAULT 0,
+                        pin_hash     TEXT,
+                        updated_at   TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP
+                    )
+                    """);
+
+            // Insert default row if not exists (single row table)
+            stmt.execute("""
+                    INSERT OR IGNORE INTO privacy_lock (lock_id, enabled, updated_at)
+                    VALUES (1, 0, CURRENT_TIMESTAMP)
+                    """);
+
             System.out.println("[DB] Schema initialised successfully.");
 
         } catch (SQLException e) {

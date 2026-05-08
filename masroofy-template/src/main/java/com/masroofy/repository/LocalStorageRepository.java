@@ -172,6 +172,56 @@ public class LocalStorageRepository {
         } catch (SQLException e) { e.printStackTrace(); }
     }
 
+    /**
+     * US#11 — Resets a cycle early: deletes all transactions, resets remaining balance to total allowance,
+     * and recalculates the safe daily limit based on the original cycle dates.
+     *
+     * @param cycleId the ID of the cycle to reset
+     * @param totalAllowance the total budget allowance to reset to
+     */
+    public void resetCycleEarly(int cycleId, double totalAllowance) {
+        String deleteTransactions = "DELETE FROM transactions WHERE cycle_id = ?";
+        String resetCycle = """
+            UPDATE budget_cycles
+            SET remaining_balance = ?, safe_daily_limit = ?
+            WHERE cycle_id = ?
+            """;
+
+        try (Connection conn = DatabaseHelper.connect()) {
+            conn.setAutoCommit(false);
+            try (PreparedStatement deleteStmt = conn.prepareStatement(deleteTransactions);
+                 PreparedStatement resetStmt = conn.prepareStatement(resetCycle)) {
+
+                // Delete all transactions
+                deleteStmt.setInt(1, cycleId);
+                deleteStmt.executeUpdate();
+
+                // Get the cycle to calculate remaining days and new safe daily limit
+                BudgetCycle cycle = getActiveCycle(1);
+                if (cycle != null && cycle.getCycleId() == cycleId) {
+                    long remainingDays = cycle.getRemainingDays();
+                    double newSafeDailyLimit = remainingDays > 0 ? totalAllowance / remainingDays : 0;
+
+                    // Reset cycle with full allowance
+                    resetStmt.setDouble(1, totalAllowance);
+                    resetStmt.setDouble(2, newSafeDailyLimit);
+                    resetStmt.setInt(3, cycleId);
+                    resetStmt.executeUpdate();
+                }
+
+                conn.commit();
+                System.out.println("[DB] Cycle reset early: ID=" + cycleId + ", transactions cleared, balance reset to " + totalAllowance);
+            } catch (SQLException inner) {
+                conn.rollback();
+                System.err.println("[DB] resetCycleEarly rolled back: " + inner.getMessage());
+                throw inner;
+            }
+        } catch (SQLException e) {
+            System.err.println("[DB] resetCycleEarly error: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
     // ── Transactions ──────────────────────────────────────────────
 
     /**
@@ -290,5 +340,101 @@ public class LocalStorageRepository {
             }
         } catch (SQLException e) { e.printStackTrace(); }
         return list;
+    }
+
+    // ── Privacy Lock (US#12) ─────────────────────────────────────
+
+    /**
+     * US#12 — Checks if privacy lock is enabled.
+     *
+     * @return true if privacy lock is enabled, false otherwise
+     */
+    public boolean isPrivacyLockEnabled() {
+        String sql = "SELECT enabled FROM privacy_lock WHERE lock_id = 1";
+        try (Connection conn = DatabaseHelper.connect();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            if (rs.next()) {
+                return rs.getInt("enabled") == 1;
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return false;
+    }
+
+    /**
+     * US#12 — Enables privacy lock with a PIN.
+     *
+     * @param pin the PIN to set (4-6 digits recommended)
+     */
+    public void enablePrivacyLock(String pin) {
+        String sql = """
+            UPDATE privacy_lock
+            SET enabled = 1, pin_hash = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE lock_id = 1
+            """;
+        try (Connection conn = DatabaseHelper.connect();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            // Simple hash using SHA-256 (in production, use bcrypt or similar)
+            String pinHash = hashPin(pin);
+            ps.setString(1, pinHash);
+            ps.executeUpdate();
+            System.out.println("[DB] Privacy lock enabled");
+        } catch (SQLException e) { e.printStackTrace(); }
+    }
+
+    /**
+     * US#12 — Disables privacy lock.
+     */
+    public void disablePrivacyLock() {
+        String sql = """
+            UPDATE privacy_lock
+            SET enabled = 0, pin_hash = NULL, updated_at = CURRENT_TIMESTAMP
+            WHERE lock_id = 1
+            """;
+        try (Connection conn = DatabaseHelper.connect();
+             Statement stmt = conn.createStatement()) {
+            stmt.execute(sql);
+            System.out.println("[DB] Privacy lock disabled");
+        } catch (SQLException e) { e.printStackTrace(); }
+    }
+
+    /**
+     * US#12 — Validates the entered PIN against stored hash.
+     *
+     * @param pin the PIN to validate
+     * @return true if PIN is valid, false otherwise
+     */
+    public boolean validatePin(String pin) {
+        String sql = "SELECT pin_hash FROM privacy_lock WHERE lock_id = 1 AND enabled = 1";
+        try (Connection conn = DatabaseHelper.connect();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            if (rs.next()) {
+                String storedHash = rs.getString("pin_hash");
+                return storedHash != null && storedHash.equals(hashPin(pin));
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return false;
+    }
+
+    /**
+     * Simple PIN hashing using SHA-256.
+     * Note: In production, use a proper password hashing algorithm like bcrypt.
+     */
+    private String hashPin(String pin) {
+        try {
+            java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(pin.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return pin; // Fallback (not secure, should not happen)
+        }
     }
 }

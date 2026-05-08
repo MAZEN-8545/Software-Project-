@@ -6,8 +6,10 @@ import java.util.ResourceBundle;
 
 import com.masroofy.Main;
 import com.masroofy.model.BudgetCycle;
+import com.masroofy.model.Category;
 import com.masroofy.model.CategoryType;
 import com.masroofy.model.Transaction;
+import com.masroofy.util.AlertUtils;
 import com.masroofy.util.DateUtils;
 
 import javafx.collections.FXCollections;
@@ -20,13 +22,15 @@ import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.TextInputDialog;
+import javafx.scene.control.ChoiceDialog;
 import javafx.stage.Stage;
 
 /**
- * Controller for history.fxml — handles US#7 (Transaction History Review).
+ * Controller for history.fxml — handles US#7 (Transaction History Review) and US#8 (Edit/Delete Transaction).
  *
  * @author Mahmoud Mohamed Elsawy
- * @version 2.0
+ * @version 3.0
  */
 public class HistoryController implements Initializable {
 
@@ -46,6 +50,8 @@ public class HistoryController implements Initializable {
     private Label lblTotalShown;
 
     private int activeCycleId = -1;
+    private List<Transaction> currentTransactions;
+    private Transaction selectedTransaction;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -73,16 +79,15 @@ public class HistoryController implements Initializable {
             return;
         }
 
-        List<Transaction> txs;
         if (type == null && fromDate == null && toDate == null) {
-            txs = Main.getRepository().getTransactions(activeCycleId);
+            currentTransactions = Main.getRepository().getTransactions(activeCycleId);
         } else {
-            txs = Main.getRepository().filterTransactions(activeCycleId, type, fromDate, toDate);
+            currentTransactions = Main.getRepository().filterTransactions(activeCycleId, type, fromDate, toDate);
         }
 
-        updateSummary(txs);
+        updateSummary(currentTransactions);
 
-        if (txs.isEmpty()) {
+        if (currentTransactions.isEmpty()) {
             showEmpty(type == null
                     ? "No Transactions Found — Log your first expense"
                     : "No transactions found for the selected filter.");
@@ -93,7 +98,7 @@ public class HistoryController implements Initializable {
         listTransactions.setVisible(true);
 
         ObservableList<String> items = FXCollections.observableArrayList();
-        for (Transaction tx : txs) {
+        for (Transaction tx : currentTransactions) {
             String note = (tx.getNote() != null && !tx.getNote().isEmpty())
                     ? "  ·  " + tx.getNote()
                     : "";
@@ -105,6 +110,144 @@ public class HistoryController implements Initializable {
             items.add(line);
         }
         listTransactions.setItems(items);
+    }
+
+    /**
+     * US#8 — Get selected transaction from list.
+     */
+    private Transaction getSelectedTransaction() {
+        int selectedIndex = listTransactions.getSelectionModel().getSelectedIndex();
+        if (selectedIndex >= 0 && currentTransactions != null && selectedIndex < currentTransactions.size()) {
+            return currentTransactions.get(selectedIndex);
+        }
+        return null;
+    }
+
+    /**
+     * US#8 — Edit selected transaction.
+     */
+    @FXML
+    private void onEditClick() {
+        Transaction tx = getSelectedTransaction();
+        if (tx == null) {
+            AlertUtils.showError("Please select a transaction to edit.");
+            return;
+        }
+
+        // Show dialog to edit amount
+        TextInputDialog amountDialog = new TextInputDialog(String.format("%.2f", tx.getAmount()));
+        amountDialog.setTitle("Edit Transaction");
+        amountDialog.setHeaderText("Edit Amount");
+        amountDialog.setContentText("New amount (EGP):");
+        
+        amountDialog.showAndWait().ifPresent(amountStr -> {
+            try {
+                final double[] newAmountHolder = new double[1];
+                newAmountHolder[0] = Double.parseDouble(amountStr.trim());
+                if (newAmountHolder[0] <= 0) {
+                    AlertUtils.showError("Amount must be greater than 0.");
+                    return;
+                }
+
+                // Show dialog to edit category
+                List<String> categories = FXCollections.observableArrayList();
+                for (CategoryType t : CategoryType.values()) {
+                    categories.add(t.getDisplayName());
+                }
+                ChoiceDialog<String> categoryDialog = new ChoiceDialog<>(tx.getCategory().getDisplayName(), categories);
+                categoryDialog.setTitle("Edit Transaction");
+                categoryDialog.setHeaderText("Edit Category");
+                categoryDialog.setContentText("Select category:");
+
+                categoryDialog.showAndWait().ifPresent(categoryName -> {
+                    final CategoryType[] newTypeHolder = new CategoryType[1];
+                    for (CategoryType t : CategoryType.values()) {
+                        if (t.getDisplayName().equals(categoryName)) {
+                            newTypeHolder[0] = t;
+                            break;
+                        }
+                    }
+                    if (newTypeHolder[0] == null) return;
+
+                    // Show dialog to edit note
+                    TextInputDialog noteDialog = new TextInputDialog(tx.getNote() != null ? tx.getNote() : "");
+                    noteDialog.setTitle("Edit Transaction");
+                    noteDialog.setHeaderText("Edit Note (optional)");
+                    noteDialog.setContentText("Note:");
+
+                    noteDialog.showAndWait().ifPresent(newNote -> {
+                        // Update transaction
+                        tx.editAmount(newAmountHolder[0]);
+                        tx.changeCategory(new Category(newTypeHolder[0]));
+                        tx.setNote(newNote.trim().isEmpty() ? null : newNote.trim());
+
+                        // Save to database
+                        Main.getRepository().updateTransaction(tx);
+
+                        // Recalculate and update cycle
+                        recalculateAndUpdateCycle();
+
+                        // Refresh the list
+                        loadTransactions(null, null, null);
+
+                        AlertUtils.showInfo("Success", "Transaction updated successfully!");
+                    });
+                });
+            } catch (NumberFormatException e) {
+                AlertUtils.showError("Invalid amount. Please enter a valid number.");
+            }
+        });
+    }
+
+    /**
+     * US#8 — Delete selected transaction.
+     */
+    @FXML
+    private void onDeleteClick() {
+        Transaction tx = getSelectedTransaction();
+        if (tx == null) {
+            AlertUtils.showError("Please select a transaction to delete.");
+            return;
+        }
+
+        boolean confirmed = AlertUtils.showConfirm("Delete Transaction",
+                String.format("Are you sure you want to delete this transaction?\n\n%s - EGP %.2f",
+                        tx.getCategory().getDisplayName(), tx.getAmount()));
+
+        if (confirmed) {
+            // Delete from database
+            Main.getRepository().deleteTransaction(tx.getTransactionId());
+
+            // Recalculate and update cycle
+            recalculateAndUpdateCycle();
+
+            // Refresh the list
+            loadTransactions(null, null, null);
+
+            AlertUtils.showInfo("Success", "Transaction deleted successfully!");
+        }
+    }
+
+    /**
+     * US#8 — Recalculate cycle after transaction edit/delete and update Safe Daily Limit.
+     */
+    private void recalculateAndUpdateCycle() {
+        BudgetCycle cycle = Main.getRepository().getActiveCycle(1);
+        if (cycle == null) return;
+
+        // Get all transactions for this cycle to recalculate totals
+        List<Transaction> allTransactions = Main.getRepository().getTransactions(cycle.getCycleId());
+        double totalSpent = allTransactions.stream().mapToDouble(Transaction::getAmount).sum();
+
+        // Update remaining balance
+        double newRemainingBalance = cycle.getTotalAllowance() - totalSpent;
+        cycle.setRemainingBalance(newRemainingBalance);
+
+        // Recalculate safe daily limit
+        cycle.recalculateLimit();
+
+        // Update cycle in database
+        Main.getRepository().updateCycle(cycle);
     }
 
     private void updateSummary(List<Transaction> txs) {

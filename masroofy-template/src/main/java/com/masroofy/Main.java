@@ -4,10 +4,14 @@ import java.io.IOException;
 
 import com.masroofy.model.BudgetCycle;
 import com.masroofy.repository.LocalStorageRepository;
+import com.masroofy.util.AlertUtils;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.control.Label;
+import javafx.scene.control.PasswordField;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 /**
@@ -16,7 +20,7 @@ import javafx.stage.Stage;
  * <p>
  * <b>OWNER: Mahmoud Mokhtar Mohamed — Team Leader (20242320)</b></p>
  *
- * @version 1.0
+ * @version 2.0
  */
 public class Main extends Application {
 
@@ -37,6 +41,83 @@ public class Main extends Application {
         // US#1: system loads data stored last time when it starts
         repository = LocalStorageRepository.getInstance();
 
+        // US#12: Check privacy lock before showing main screen
+        if (repository.isPrivacyLockEnabled()) {
+            if (!showAuthenticationDialog()) {
+                // Authentication failed or cancelled - close the app
+                System.exit(0);
+                return;
+            }
+        }
+
+        showMainScreen(stage);
+    }
+
+    /**
+     * US#12 — Shows the PIN authentication dialog.
+     *
+     * @return true if authentication successful, false otherwise
+     */
+    private boolean showAuthenticationDialog() {
+        int attempts = 0;
+        final int maxAttempts = 3;
+
+        while (attempts < maxAttempts) {
+            javafx.scene.control.TextInputDialog dialog = new javafx.scene.control.TextInputDialog();
+            dialog.setTitle("Privacy Lock — Authentication Required");
+            dialog.setHeaderText("🔒 Enter your PIN to access Masroofy");
+            dialog.setContentText("PIN:");
+
+            // Use PasswordField for secure input
+            PasswordField pwdField = new PasswordField();
+            pwdField.setPromptText("Enter 4-6 digit PIN");
+            pwdField.setPrefWidth(280);
+            pwdField.setPrefHeight(42);
+            pwdField.getStyleClass().add("password-field");
+
+            Label attemptLabel = new Label("⚠ Attempt " + (attempts + 1) + " of " + maxAttempts);
+            attemptLabel.getStyleClass().add("attempt-label");
+
+            Label infoLabel = new Label("🔒 This app is protected by a privacy lock.");
+            infoLabel.setStyle("-fx-text-fill: #B8D4E3; -fx-font-size: 14px;");
+
+            VBox content = new VBox(16);
+            content.setStyle("-fx-padding: 8 4; -fx-background-color: #0F1923;");
+            content.getChildren().addAll(infoLabel, attemptLabel, pwdField);
+
+            dialog.getDialogPane().setContent(content);
+            dialog.getDialogPane().setPrefWidth(400);
+
+            // Apply CSS stylesheet to the dialog
+            dialog.getDialogPane().getStylesheets().add(
+                getClass().getResource("/css/styles.css").toExternalForm());
+
+            java.util.Optional<String> result = dialog.showAndWait();
+
+            if (result.isPresent()) {
+                String pin = pwdField.getText().trim();
+                if (repository.validatePin(pin)) {
+                    return true; // Authentication successful
+                } else {
+                    attempts++;
+                    if (attempts < maxAttempts) {
+                        AlertUtils.showError("Incorrect PIN. " + (maxAttempts - attempts) + " attempts remaining.");
+                    }
+                }
+            } else {
+                // User cancelled
+                return false;
+            }
+        }
+
+        AlertUtils.showError("Too many failed attempts. Access denied.");
+        return false;
+    }
+
+    /**
+     * Shows the main application screen.
+     */
+    private void showMainScreen(Stage stage) throws IOException {
         // Check for active cycle to decide which screen to show first
         BudgetCycle activeCycle = repository.getActiveCycle(1);
         String fxml;

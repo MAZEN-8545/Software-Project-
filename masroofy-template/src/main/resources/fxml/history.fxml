@@ -46,14 +46,25 @@
     </top>
 
     <center>
-        <StackPane style="-fx-padding:16 20;-fx-background-color:#0F1923;">
-            <ListView fx:id="listTransactions"
-                      style="-fx-background-color:transparent;-fx-border-color:transparent;"/>
-            <Label fx:id="lblNoTransactions"
-                   text="No transactions found."
-                   style="-fx-text-fill:#2D5A72;-fx-font-size:15px;-fx-padding:50;"
-                   visible="false" StackPane.alignment="CENTER"/>
-        </StackPane>
+        <VBox spacing="10" style="-fx-padding:16 20;-fx-background-color:#0F1923;">
+            <!-- Action buttons for selected transaction -->
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Button text="✎ Edit" onAction="#onEditClick"
+                        style="-fx-background-color:#2A86B5;-fx-text-fill:white;-fx-cursor:hand;-fx-background-radius:6px;-fx-padding:6 16;-fx-font-size:12px;"/>
+                <Button text="🗑 Delete" onAction="#onDeleteClick"
+                        style="-fx-background-color:#E74C3C;-fx-text-fill:white;-fx-cursor:hand;-fx-background-radius:6px;-fx-padding:6 16;-fx-font-size:12px;"/>
+                <Label text="Select a transaction to edit or delete"
+                       style="-fx-text-fill:#4E7A8E;-fx-font-size:12px;-fx-padding:0 0 0 10;"/>
+            </HBox>
+            <StackPane VBox.vgrow="ALWAYS">
+                <ListView fx:id="listTransactions"
+                          style="-fx-background-color:transparent;-fx-border-color:transparent;"/>
+                <Label fx:id="lblNoTransactions"
+                       text="No transactions found."
+                       style="-fx-text-fill:#2D5A72;-fx-font-size:15px;-fx-padding:50;"
+                       visible="false" StackPane.alignment="CENTER"/>
+            </StackPane>
+        </VBox>
     </center>
 
     <bottom>
