@@ -7,7 +7,8 @@
 Team Members & Ownership:
   • Mahmoud Mokhtar Mohamed (Team Leader) — 20242320
       DatabaseHelper.java, LocalStorageRepository.java,
-      BudgetCalculator.java, NotificationService.java , DashboardService.java ,Main.java
+      BudgetCalculator.java, NotificationService.java , DashboardService.java , 
+      part in DashboardController.java, Main.java
   • Mazen Mahmoud Abd El-Moez             — 20242258
       BudgetCycle.java, Transaction.java, Category.java,
       CategoryType.java, User.java, 
@@ -67,7 +68,7 @@ STEP 5 — Main + Controllers (Mahmoud Mokhtar + Mahmoud Elsawy)
   Main.java               → start() method (Mahmoud Mokhtar)
   CycleSetupController.java → US#1 (Mahmoud Elsawy)
   ExpenseController.java    → US#2 + US#6 (Mahmoud Elsawy)
-  DashboardController.java  → US#3 + US#4 (Mahmoud Elsawy)
+  DashboardController.java  → US#3  (Mahmoud Elsawy) + US#4 (Mahmoud Mokhtar)
   HistoryController.java    → US#7 (Mahmoud Elsawy)
 
 ----------------------------------------------------------
@@ -109,8 +110,8 @@ PROJECT STRUCTURE
       StateManager.java          — Mohamed Arafa
 
   src/main/resources/
-    fxml/   (4 screens — COMPLETE, do not edit)
-    css/    (styles.css — COMPLETE, do not edit)
+    fxml/   (4 screens — COMPLETE)
+    css/    (styles.css — COMPLETE)
 
 ----------------------------------------------------------
 GENERATE JAVADOC (Task 4)
